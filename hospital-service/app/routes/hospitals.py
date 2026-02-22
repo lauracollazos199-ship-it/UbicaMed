@@ -9,7 +9,10 @@ from app.services.hospital_service import (
 
 from app.models.hospital import Hospital
 
-router = APIRouter()
+router = APIRouter(
+    prefix="/hospitales",
+    tags=["Hospitales"]
+)
 
 
 @router.get("/hospitales")
@@ -45,7 +48,8 @@ def agregar_hospital(hospital: Hospital):
 @router.delete("/hospitales/{id}")
 def borrar_hospital(hospital_id: int):
     try:
-        return eliminar_hospital(hospital_id)
+        eliminar_hospital(hospital_id)
+        return {"mensaje": "Hospital eliminado correctamente"}
 
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e)) from e
