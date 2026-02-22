@@ -1,4 +1,4 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, HTTPException
 from app.services.hospital_service import (
     obtener_hospitales,
     obtener_hospitales_por_eps,
@@ -18,19 +18,34 @@ def listar_hospitales():
 
 @router.get("/hospitales/eps/{eps}")
 def hospitales_por_eps(eps: str):
-    return obtener_hospitales_por_eps(eps)
+    try:
+        return obtener_hospitales_por_eps(eps)
+    except ValueError as e:
+        raise HTTPException (status_code=404, detail=str(e)) from e
+    
 
 
 @router.get("/hospitales/{id}")
 def hospital_por_id(hospital_id: int):
-    return obtener_hospital_por_id(hospital_id)
+    try: 
+        return obtener_hospital_por_id(hospital_id)
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e)) from e
 
 
 @router.post("/hospitales")
 def agregar_hospital(hospital: Hospital):
-    return crear_hospital(hospital)
+    try:
+        return crear_hospital(hospital)
+
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e)) from e
 
 
 @router.delete("/hospitales/{id}")
 def borrar_hospital(hospital_id: int):
-    return eliminar_hospital(hospital_id)
+    try:
+        return eliminar_hospital(hospital_id)
+
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e)) from e

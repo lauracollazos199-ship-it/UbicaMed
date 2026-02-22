@@ -24,8 +24,10 @@ hospitales = [
     )
 ]
 
+
 def obtener_hospitales():
     return hospitales
+
 
 def obtener_hospitales_por_eps(eps: str):
 
@@ -33,23 +35,39 @@ def obtener_hospitales_por_eps(eps: str):
 
     for hospital in hospitales:
         if eps in hospital.eps:
-            resultado.append(hospital) 
-            
+            resultado.append(hospital)
+
+    if len(resultado) == 0:
+        raise ValueError("No hay hospitales para esa EPS")
+
     return resultado
 
+
 def crear_hospital(hospital: Hospital):
+
+    for h in hospitales:
+        if h.id == hospital.id:
+            raise ValueError("El hospital ya existe")
+
     hospitales.append(hospital)
+
     return hospital
 
+
 def eliminar_hospital(hospital_id: int):
+
     for hospital in hospitales[:]:
         if hospital.id == hospital_id:
             hospitales.remove(hospital)
             return True
-    return False
 
-def obtener_hospital_por_id (hospital_id:int):
+    raise ValueError("Hospital no encontrado")
+
+
+def obtener_hospital_por_id(hospital_id: int):
+
     for hospital in hospitales:
         if hospital.id == hospital_id:
             return hospital
-        return None
+
+    raise ValueError("Hospital no encontrado")
