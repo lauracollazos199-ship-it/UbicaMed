@@ -31,5 +31,49 @@ def calcular_distancia(usuario: Location, hospital: HospitalLocation):
     except Exception as e: 
         raise UbicacionInvalidaError ("No se pudo calcular la distancia") from e 
     
-    
 
+def hospitales_ordenados(usuario: Location, hospitales: list):
+
+    try:
+
+        resultado = []
+
+        for hospital in hospitales:
+
+            distancia = calcular_distancia(usuario, hospital)
+
+            resultado.append({
+                "hospital": hospital,
+                "distancia_km": distancia
+            })
+
+        resultado.sort(key=lambda x: x["distancia_km"])
+
+        return resultado
+
+    except Exception as e:
+
+        raise UbicacionInvalidaError(
+            "Error al ordenar hospitales por distancia"
+        ) from e
+
+    
+def hospital_mas_cercano(usuario: Location, hospitales: list):
+
+    try:
+
+        hospitales_distancia = hospitales_ordenados(usuario, hospitales)
+
+        if not hospitales_distancia:
+
+            raise HospitalNoEncontradoError(
+                "No hay hospitales disponibles"
+            )
+
+        return hospitales_distancia[0]
+
+    except Exception as e:
+
+        raise UbicacionInvalidaError(
+            "Error al encontrar el hospital más cercano"
+        ) from e
