@@ -29,9 +29,7 @@ def calcular_distancia(usuario: Location, hospital: HospitalLocation):
         return distancia 
     
     except Exception as e: 
-        raise UbicacionInvalidaError (
-            "No se pudo calcular la distancia"
-        ) from e 
+        raise UbicacionInvalidaError ("No se pudo calcular la distancia") from e 
     
     
 
