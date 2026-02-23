@@ -14,7 +14,7 @@ def calcular_distancia(usuario: Location, hospital: HospitalLocation):
 
     try:
 
-        R = 6371  # radio de la tierra en km
+        R = 6371  
 
         lat1 = radians(usuario.latitud)
         lon1 = radians(usuario.longitud)
@@ -59,7 +59,9 @@ def hospitales_ordenados(usuario: Location, hospitales: list):
 
     except Exception as e:
 
-        raise UbicacionInvalidaError("Error al ordenar hospitales por distancia") from e
+        raise UbicacionInvalidaError(
+            "Error al ordenar hospitales por distancia"
+        ) from e
 
 
 def hospital_mas_cercano(usuario: Location, hospitales: list):

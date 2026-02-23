@@ -15,11 +15,11 @@ router = APIRouter(
 )
 
 
-@router.get("/hospitales")
+@router.get("")
 def listar_hospitales():
     return obtener_hospitales()
 
-@router.get("/hospitales/eps/{eps}")
+@router.get("/eps/{eps}")
 def hospitales_por_eps(eps: str):
     try:
         return obtener_hospitales_por_eps(eps)
@@ -28,7 +28,7 @@ def hospitales_por_eps(eps: str):
     
 
 
-@router.get("/hospitales/{id}")
+@router.get("/{hospital_id}")
 def hospital_por_id(hospital_id: int):
     try: 
         return obtener_hospital_por_id(hospital_id)
@@ -36,7 +36,7 @@ def hospital_por_id(hospital_id: int):
         raise HTTPException(status_code=404, detail=str(e)) from e
 
 
-@router.post("/hospitales")
+@router.post("")
 def agregar_hospital(hospital: Hospital):
     try:
         return crear_hospital(hospital)
@@ -45,7 +45,7 @@ def agregar_hospital(hospital: Hospital):
         raise HTTPException(status_code=400, detail=str(e)) from e
 
 
-@router.delete("/hospitales/{id}")
+@router.delete("/{hospital_id}")
 def borrar_hospital(hospital_id: int):
     try:
         eliminar_hospital(hospital_id)
