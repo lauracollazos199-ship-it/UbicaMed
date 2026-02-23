@@ -1,19 +1,23 @@
 from math import radians, sin, cos, sqrt, atan2
 from app.models.location import Location, HospitalLocation
 
+
 class UbicacionInvalidaError(Exception):
     pass
+
 
 class HospitalNoEncontradoError(Exception):
     pass
 
+
 def calcular_distancia(usuario: Location, hospital: HospitalLocation):
+
     try:
 
-        R = 6371
+        R = 6371  # radio de la tierra en km
 
         lat1 = radians(usuario.latitud)
-        lon1 = radians(usuario.longuitud)
+        lon1 = radians(usuario.longitud)
 
         lat2 = radians(hospital.latitud)
         lon2 = radians(hospital.longitud)
@@ -21,16 +25,18 @@ def calcular_distancia(usuario: Location, hospital: HospitalLocation):
         dlat = lat2 - lat1
         dlon = lon2 - lon1
 
-        a = sin(dlat / 2) ** 2 + cos(lat1) + cos(lat2) * sin(dlon /2) ** 2
-        c = 2 * atan2(sqrt(a), sqrt(1-a))
+        a = sin(dlat / 2) ** 2 + cos(lat1) * cos(lat2) * sin(dlon / 2) ** 2
+        c = 2 * atan2(sqrt(a), sqrt(1 - a))
 
         distancia = R * c
 
-        return distancia 
-    
-    except Exception as e: 
-        raise UbicacionInvalidaError ("No se pudo calcular la distancia") from e 
-    
+        return distancia
+
+    except Exception as e:
+        raise UbicacionInvalidaError(
+            "No se pudo calcular la distancia"
+        ) from e
+
 
 def hospitales_ordenados(usuario: Location, hospitales: list):
 
@@ -53,27 +59,17 @@ def hospitales_ordenados(usuario: Location, hospitales: list):
 
     except Exception as e:
 
-        raise UbicacionInvalidaError(
-            "Error al ordenar hospitales por distancia"
-        ) from e
+        raise UbicacionInvalidaError("Error al ordenar hospitales por distancia") from e
 
-    
+
 def hospital_mas_cercano(usuario: Location, hospitales: list):
 
-    try:
+    hospitales_distancia = hospitales_ordenados(usuario, hospitales)
 
-        hospitales_distancia = hospitales_ordenados(usuario, hospitales)
+    if not hospitales_distancia:
 
-        if not hospitales_distancia:
+        raise HospitalNoEncontradoError(
+            "No hay hospitales disponibles"
+        )
 
-            raise HospitalNoEncontradoError(
-                "No hay hospitales disponibles"
-            )
-
-        return hospitales_distancia[0]
-
-    except Exception as e:
-
-        raise UbicacionInvalidaError(
-            "Error al encontrar el hospital más cercano"
-        ) from e
+    return hospitales_distancia[0]
