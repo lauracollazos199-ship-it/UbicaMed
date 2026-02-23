@@ -1,8 +1,10 @@
 from fastapi import FastAPI
-from app.routes.geo_routes import router
+from app.routes.geo_routes import router as geo_router
 
-app = FastAPI(
-    title="Geo service"
-)
+app = FastAPI()
 
-app.include_router(router)
+app.include_router(geo_router)
+
+@app.get("/")
+def root():
+    return {"mensaje": "Geo service funcionando"}
