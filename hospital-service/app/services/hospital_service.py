@@ -1,73 +1,68 @@
-from app.models.hospital import Hospital
-
-hospitales = [
-    Hospital(
-        id=1,
-        nombre="Hospital Central",
-        eps=["Sura", "Sanitas"],
-        latitud=4.65,
-        longitud=-74.05
-    ),
-    Hospital(
-        id=2,
-        nombre="Clínica Norte",
-        eps=["Nueva EPS", "Sura"],
-        latitud=4.70,
-        longitud=-74.03
-    ),
-    Hospital(
-        id=3,
-        nombre="Hospital San José",
-        eps=["Sanitas"],
-        latitud=4.60,
-        longitud=-74.08
-    )
-]
+from sqlalchemy.orm import Session
+from app.database.models_db import HospitalDB, EPSDB
 
 
-def obtener_hospitales():
+def obtener_hospitales(db: Session):
+    hospitales = db.query(HospitalDB).all()
+
+    if not hospitales:
+        raise ValueError("No hay hospitales registrados")
+
     return hospitales
 
 
-def obtener_hospitales_por_eps(eps: str):
+def obtener_hospital_por_id(db: Session, hospital_id: int):
 
-    resultado = []
+    hospital = db.query(HospitalDB).filter(
+        HospitalDB.id == hospital_id
+    ).first()
 
-    for hospital in hospitales:
-        if eps in hospital.eps:
-            resultado.append(hospital)
-
-    if len(resultado) == 0:
-        raise ValueError("No hay hospitales para esa EPS")
-
-    return resultado
-
-
-def crear_hospital(hospital: Hospital):
-
-    for h in hospitales:
-        if h.id == hospital.id:
-            raise ValueError("El hospital ya existe")
-
-    hospitales.append(hospital)
+    if hospital is None:
+        raise ValueError("Hospital no encontrado")
 
     return hospital
 
 
-def eliminar_hospital(hospital_id: int):
+def obtener_hospitales_por_eps(db: Session, eps_nombre: str):
 
-    for hospital in hospitales[:]:
-        if hospital.id == hospital_id:
-            hospitales.remove(hospital)
-            return True
+    hospitales = (
+        db.query(HospitalDB)
+        .join(EPSDB)
+        .filter(EPSDB.nombre == eps_nombre)
+        .all()
+    )
 
-    raise ValueError("Hospital no encontrado")
+    if not hospitales:
+        raise ValueError("No hay hospitales para esa EPS")
+
+    return hospitales
 
 
-def obtener_hospital_por_id(hospital_id: int):
+def crear_hospital(db: Session, nombre: str, latitud: float, longitud: float):
 
-    for hospital in hospitales:
-        if hospital.id == hospital_id:
-            return hospital
+    hospital = HospitalDB(
+        nombre=nombre,
+        latitud=latitud,
+        longitud=longitud
+    )
 
-    raise ValueError("Hospital no encontrado")
+    db.add(hospital)
+    db.commit()
+    db.refresh(hospital)
+
+    return hospital
+
+
+def eliminar_hospital(db: Session, hospital_id: int):
+
+    hospital = db.query(HospitalDB).filter(
+        HospitalDB.id == hospital_id
+    ).first()
+
+    if hospital is None:
+        raise ValueError("Hospital no encontrado")
+
+    db.delete(hospital)
+    db.commit()
+
+    return True
