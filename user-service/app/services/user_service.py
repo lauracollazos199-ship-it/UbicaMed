@@ -1,26 +1,38 @@
-from app.models.user import User
+from app.exceptions import (
+    UsuarioNoExisteError,
+    UsuarioYaExisteError,
+    ListaUsuariosVaciaError
+)
 
 usuarios = []
 
 def obtener_usuarios():
+    if not usuarios:
+        raise ListaUsuariosVaciaError("No existen usuarios registrados")
     return usuarios
 
-def obtener_usuario_por_id(user_id: int):
-    for usuario in usuarios:
-        if usuario.id == user_id:
-            return usuario
-    raise ValueError("Usuario no encontrado")
 
-def crear_usuario(user: User):
-    for u in usuarios:
-        if u.id == user.id:
-            raise ValueError("El usuario ya existe")
+def obtener_usuario_por_id(user_id: int):
+    usuario = next((u for u in usuarios if u.id == user_id), None)
+
+    if usuario is None:
+        raise UsuarioNoExisteError("El usuario no existe")
+
+    return usuario
+
+
+def crear_usuario(user):
+    if any(u.id == user.id for u in usuarios):
+        raise UsuarioYaExisteError("El usuario ya existe")
+
     usuarios.append(user)
     return user
 
+
 def eliminar_usuario(user_id: int):
-    for usuario in usuarios:
-        if usuario.id == user_id:
-            usuarios.remove(usuario)
-            return
-    raise ValueError("Usuario no encontrado")
+    usuario = next((u for u in usuarios if u.id == user_id), None)
+
+    if usuario is None:
+        raise UsuarioNoExisteError("El usuario no existe")
+
+    usuarios.remove(usuario)
