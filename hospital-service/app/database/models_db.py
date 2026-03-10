@@ -12,12 +12,17 @@ class HospitalDB(Base):
     latitud = Column(Float)
     longitud = Column(Float)
 
+    convenios = relationship("ConvenioDB", back_populates="hospital")
+
 
 class EPSDB(Base):
     __tablename__ = "eps"
 
     id = Column(Integer, primary_key=True, index=True)
     nombre = Column(String, unique=True)
+
+    convenios = relationship("ConvenioDB", back_populates="eps")
+
 
 
 class ConvenioDB(Base):
@@ -26,3 +31,6 @@ class ConvenioDB(Base):
     id = Column(Integer, primary_key=True, index=True)
     hospital_id = Column(Integer, ForeignKey("hospitales.id"))
     eps_id = Column(Integer, ForeignKey("eps.id"))
+
+    hospital = relationship("HospitalDB", back_populates="convenios")
+    eps = relationship("EPSDB", back_populates="convenios")
