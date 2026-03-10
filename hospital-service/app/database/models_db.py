@@ -8,6 +8,7 @@ class HospitalDB(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     nombre = Column(String, nullable=False)
+    direccion = Column(String)
     latitud = Column(Float)
     longitud = Column(Float)
 
