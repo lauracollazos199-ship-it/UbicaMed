@@ -38,7 +38,7 @@ def calcular_distancia(usuario: Location, hospital: HospitalLocation):
         ) from e
 
 
-def hospitales_ordenados(usuario: Location, hospitales: list):
+def hospitales_ordenados(usuario: Location, hospitales: list[HospitalLocation]):
 
     try:
 
@@ -64,7 +64,7 @@ def hospitales_ordenados(usuario: Location, hospitales: list):
         ) from e
 
 
-def hospital_mas_cercano(usuario: Location, hospitales: list):
+def hospital_mas_cercano(usuario: Location, hospitales: list[HospitalLocation]):
 
     hospitales_distancia = hospitales_ordenados(usuario, hospitales)
 

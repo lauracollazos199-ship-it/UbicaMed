@@ -14,6 +14,11 @@ class HospitalDB(Base):
 
     convenios = relationship("ConvenioDB", back_populates="hospital")
 
+    eps = relationship(
+        "EPSDB",
+        secondary="convenios",
+        viewonly=True)
+
 
 class EPSDB(Base):
     __tablename__ = "eps"
@@ -32,5 +37,9 @@ class ConvenioDB(Base):
     hospital_id = Column(Integer, ForeignKey("hospitales.id"))
     eps_id = Column(Integer, ForeignKey("eps.id"))
 
-    hospital = relationship("HospitalDB", back_populates="convenios")
+    convenios = relationship("ConvenioDB",
+                             back_populates="hospital",
+                            cascade="all, delete"
+            )
+    
     eps = relationship("EPSDB", back_populates="convenios")

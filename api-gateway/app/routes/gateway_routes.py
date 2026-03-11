@@ -42,7 +42,7 @@ def listar_hospitales():
         ) from e
 
 
-@router.get("/hospitales/{hosptal_id}")
+@router.get("/hospitales/{hospital_id}")
 def hospital_por_id(hospital_id: int):
 
     try:
