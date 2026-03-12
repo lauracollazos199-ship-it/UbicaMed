@@ -9,12 +9,6 @@ from app.services.user_service import (
 
 from app.models.user import User
 
-from app.exceptions import (
-    UsuarioNoExisteError,
-    UsuarioYaExisteError,
-    ListaUsuariosVaciaError
-)
-
 router = APIRouter(
     prefix="/users",
     tags=["Users"]
@@ -29,11 +23,8 @@ router = APIRouter(
 def listar_usuarios():
     try:
         return obtener_usuarios()
-    except ListaUsuariosVaciaError as e:
-        raise HTTPException(
-            status_code=404,
-            detail=str(e)
-        ) 
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e)) from e
 
 
 # ==============================
@@ -44,11 +35,8 @@ def listar_usuarios():
 def usuario_por_id(user_id: int):
     try:
         return obtener_usuario_por_id(user_id)
-    except UsuarioNoExisteError as e:
-        raise HTTPException(
-            status_code=404,
-            detail=str(e)
-        ) 
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e) ) from e
 
 
 # ==============================
@@ -59,11 +47,8 @@ def usuario_por_id(user_id: int):
 def agregar_usuario(user: User):
     try:
         return crear_usuario(user)
-    except UsuarioYaExisteError as e:
-        raise HTTPException(
-            status_code=400,
-            detail=str(e)
-        ) 
+    except ValueError as e:
+        raise HTTPException( status_code=400,detail=str(e) ) from e
 
 
 # ==============================
@@ -75,8 +60,5 @@ def borrar_usuario(user_id: int):
     try:
         eliminar_usuario(user_id)
         return {"mensaje": "Usuario eliminado correctamente"}
-    except UsuarioNoExisteError as e:
-        raise HTTPException(
-            status_code=404,
-            detail=str(e)
-        ) 
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e) ) from  e
