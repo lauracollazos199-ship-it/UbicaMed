@@ -1,5 +1,9 @@
-from fastapi import APIRouter, HTTPException, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
+
+from app.database.database import get_db
+from app.services import user_service
+from app.models.user import UserCreate
 
 from app.services.user_service import (
     obtener_usuarios,
@@ -48,9 +52,9 @@ def usuario_por_id(user_id: int, db: Session = Depends(get_db)):
 # ==============================
 
 @router.post("")
-def agregar_usuario(user: User, db: Session = Depends(get_db)):
+def agregar_usuario(user: UserCreate, db: Session = Depends(get_db)):
     try:
-        return crear_usuario(db, user)
+        return user_service.crear_usuario(db, user)
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
