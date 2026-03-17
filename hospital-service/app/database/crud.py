@@ -51,6 +51,7 @@ def obtener_hospitales_por_eps(db: Session, nombre_eps: str):
         .join(ConvenioDB, HospitalDB.id == ConvenioDB.hospital_id)
         .join(EPSDB, EPSDB.id == ConvenioDB.eps_id)
         .filter(EPSDB.nombre == nombre_eps)
+        .distinct()
         .all()
     )
 

@@ -12,8 +12,12 @@ class HospitalDB(Base):
     latitud = Column(Float)
     longitud = Column(Float)
 
-    convenios = relationship("ConvenioDB", back_populates="hospital")
-
+    convenios = relationship(
+    "ConvenioDB",
+    back_populates="hospital",
+    cascade="all, delete"
+)
+    
     eps = relationship(
         "EPSDB",
         secondary="convenios",
@@ -37,9 +41,5 @@ class ConvenioDB(Base):
     hospital_id = Column(Integer, ForeignKey("hospitales.id"))
     eps_id = Column(Integer, ForeignKey("eps.id"))
 
-    convenios = relationship("ConvenioDB",
-                             back_populates="hospital",
-                            cascade="all, delete"
-            )
-    
+    hospital = relationship("HospitalDB", back_populates="convenios")
     eps = relationship("EPSDB", back_populates="convenios")
