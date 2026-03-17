@@ -19,7 +19,7 @@ def crear_usuario(db: Session, user: UserCreate):
     nuevo_usuario = UserDB(
         nombre=user.nombre,
         email=user.email,
-        eps=user.eps
+        eps_id=user.eps_id
     )
 
     db.add(nuevo_usuario)

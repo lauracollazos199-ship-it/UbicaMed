@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException
 
-from app.models.location import Location, HospitalLocation
+from app.models.location import Location, HospitalLocation, HospitalesRequest
 from app.services.geo_service import (
     calcular_distancia,
     hospitales_ordenados,
@@ -36,15 +36,13 @@ def obtener_distancia(usuario: Location, hospital: HospitalLocation):
 
 
 @router.post("/hospitales-cercanos")
-
-def obtener_hospitales_cercanos(
-        usuario: Location,
-        hospitales: list[HospitalLocation]
-):
+def obtener_hospitales_cercanos(data: HospitalesRequest):
 
     try:
 
-        resultado = hospitales_ordenados(usuario, hospitales)
+        resultado = hospitales_ordenados(
+            data.usuario, 
+            data.hospitales)
 
         return resultado
 
@@ -57,14 +55,13 @@ def obtener_hospitales_cercanos(
 
 
 @router.post("/hospital-mas-cercano")
-def obtener_hospital_mas_cercano(
-        usuario: Location,
-        hospitales: list[HospitalLocation]
-):
+def obtener_hospital_mas_cercano(data: HospitalesRequest):
 
     try:
 
-        resultado = hospital_mas_cercano(usuario, hospitales)
+        resultado = hospital_mas_cercano(
+            data.usuario, 
+            data.hospitales)
 
         return resultado
 

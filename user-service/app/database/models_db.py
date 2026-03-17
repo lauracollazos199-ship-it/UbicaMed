@@ -10,8 +10,8 @@ class UserDB(Base):
     nombre = Column(String, nullable=False)
     email = Column(String, unique=True)
 
-    eps = Column(String, ForeignKey("eps.id"))  
+    eps_id = Column(String)  
 
-    eps = relationship("EPSDB")
+   
 
 

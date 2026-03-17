@@ -11,11 +11,18 @@ class UsuarioNoExisteError(Exception):
 class UsuarioYaExisteError(Exception):
     pass
 
-
+class ListaUsuariosVaciaError(Exception):
+    pass
 
 # Obtener usuarios
 def obtener_usuarios(db: Session):
-    return crud.obtener_usuarios(db)
+
+    usuarios = crud.obtener_usuarios(db)
+
+    if not usuarios:
+        raise ListaUsuariosVaciaError("No existen usuarios registrados")
+
+    return usuarios
 
 
 # Obtener usuario por id

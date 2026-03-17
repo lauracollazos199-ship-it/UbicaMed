@@ -4,14 +4,14 @@ from pydantic import BaseModel
 class UserCreate(BaseModel):
     nombre: str
     email: str
-    eps_id: str
+    eps_id: int
 
 
 class User(BaseModel):
     id: int
     nombre: str
     email: str
-    eps_id: str
+    eps_id: int
 
     model_config = {
         "from_attributes": True

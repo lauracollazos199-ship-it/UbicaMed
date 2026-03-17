@@ -1,7 +1,6 @@
 
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
-
 from app.database.database import get_db
 
 from app.services.user_service import (
@@ -9,6 +8,7 @@ from app.services.user_service import (
     obtener_usuario_por_id,
     crear_usuario,
     eliminar_usuario,
+    ListaUsuariosVaciaError,
     UsuarioNoExisteError,
     UsuarioYaExisteError
 )
@@ -26,9 +26,11 @@ router = APIRouter(
 # ==============================
 
 @router.get("")
-@router.get("")
 def listar_usuarios(db: Session = Depends(get_db)):
-    return obtener_usuarios(db)
+    try:
+        return obtener_usuarios(db)
+    except ListaUsuariosVaciaError as e:
+        raise HTTPException(status_code=404, detail=str(e)) from e
 
 
 # ==============================
@@ -47,7 +49,7 @@ def usuario_por_id(user_id: int, db: Session = Depends(get_db)):
 # CREAR USUARIO
 # ==============================
 
-@router.post("")
+
 @router.post("")
 def agregar_usuario(user: UserCreate, db: Session = Depends(get_db)):
     try:

@@ -122,7 +122,7 @@ def hospitales_cercanos(user_id: int, ubicacion: Ubicacion):
 
         # enviar a geo-service
         response_geo = requests.post(
-            f"{GEO_SERVICE}/hospitales-ordenados",
+            f"{GEO_SERVICE}/hospitales-cercanos",
             json={
                 "usuario": ubicacion.dict(),
                 "hospitales": hospitales
