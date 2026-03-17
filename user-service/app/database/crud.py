@@ -1,4 +1,3 @@
-
 from sqlalchemy.orm import Session
 from app.database.models_db import UserDB
 from app.models.user import UserCreate
@@ -20,7 +19,7 @@ def crear_usuario(db: Session, user: UserCreate):
     nuevo_usuario = UserDB(
         nombre=user.nombre,
         email=user.email,
-        eps_id=user.eps_id
+        eps=user.eps
     )
 
     db.add(nuevo_usuario)

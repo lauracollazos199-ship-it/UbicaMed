@@ -1,9 +1,8 @@
+
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from app.database.database import get_db
-from app.services import user_service
-from app.models.user import UserCreate
 
 from app.services.user_service import (
     obtener_usuarios,
@@ -11,11 +10,10 @@ from app.services.user_service import (
     crear_usuario,
     eliminar_usuario,
     UsuarioNoExisteError,
-    ListaUsuariosVaciaError
+    UsuarioYaExisteError
 )
 
-from app.models.user import User
-from app.database.database import get_db
+from app.models.user import UserCreate
 
 router = APIRouter(
     prefix="/users",
@@ -28,11 +26,9 @@ router = APIRouter(
 # ==============================
 
 @router.get("")
+@router.get("")
 def listar_usuarios(db: Session = Depends(get_db)):
-    try:
-        return obtener_usuarios(db)
-    except ListaUsuariosVaciaError as e:
-        raise HTTPException(status_code=404, detail=str(e))
+    return obtener_usuarios(db)
 
 
 # ==============================
@@ -44,7 +40,7 @@ def usuario_por_id(user_id: int, db: Session = Depends(get_db)):
     try:
         return obtener_usuario_por_id(db, user_id)
     except UsuarioNoExisteError as e:
-        raise HTTPException(status_code=404, detail=str(e))
+        raise HTTPException(status_code=404, detail=str(e)) from e
 
 
 # ==============================
@@ -52,12 +48,13 @@ def usuario_por_id(user_id: int, db: Session = Depends(get_db)):
 # ==============================
 
 @router.post("")
+@router.post("")
 def agregar_usuario(user: UserCreate, db: Session = Depends(get_db)):
     try:
-        return user_service.crear_usuario(db, user)
-    except Exception as e:
-        raise HTTPException(status_code=400, detail=str(e))
-
+        return crear_usuario(db, user)
+    except UsuarioYaExisteError as e:
+        raise HTTPException(status_code=400, detail=str(e))from e
+    
 
 # ==============================
 # ELIMINAR USUARIO
@@ -69,4 +66,4 @@ def borrar_usuario(user_id: int, db: Session = Depends(get_db)):
         eliminar_usuario(db, user_id)
         return {"mensaje": "Usuario eliminado correctamente"}
     except UsuarioNoExisteError as e:
-        raise HTTPException(status_code=404, detail=str(e))
+        raise HTTPException(status_code=404, detail=str(e)) from e
