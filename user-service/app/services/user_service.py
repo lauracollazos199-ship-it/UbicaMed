@@ -1,19 +1,36 @@
-from app.exceptions import (
-    UsuarioNoExisteError,
-    UsuarioYaExisteError,
-    ListaUsuariosVaciaError
-)
+from sqlalchemy.orm import Session
 
-usuarios = []
+from app.database import crud
+from app.models.user import User
 
-def obtener_usuarios():
+
+class UsuarioNoExisteError(Exception):
+    pass
+
+
+class UsuarioYaExisteError(Exception):
+    pass
+
+
+class ListaUsuariosVaciaError(Exception):
+    pass
+
+
+# Obtener usuarios
+def obtener_usuarios(db: Session):
+
+    usuarios = crud.obtener_usuarios(db)
+
     if not usuarios:
         raise ListaUsuariosVaciaError("No existen usuarios registrados")
+
     return usuarios
 
 
-def obtener_usuario_por_id(user_id: int):
-    usuario = next((u for u in usuarios if u.id == user_id), None)
+# Obtener usuario por id
+def obtener_usuario_por_id(db: Session, user_id: int):
+
+    usuario = crud.obtener_usuario_por_id(db, user_id)
 
     if usuario is None:
         raise UsuarioNoExisteError("El usuario no existe")
@@ -21,18 +38,22 @@ def obtener_usuario_por_id(user_id: int):
     return usuario
 
 
-def crear_usuario(user):
-    if any(u.id == user.id for u in usuarios):
-        raise UsuarioYaExisteError("El usuario ya existe")
+# Crear usuario
+def crear_usuario(db: Session, user: User):
 
-    usuarios.append(user)
-    return user
+    usuario = crud.crear_usuario(db, user)
+
+    return usuario
 
 
-def eliminar_usuario(user_id: int):
-    usuario = next((u for u in usuarios if u.id == user_id), None)
+# Eliminar usuario
+def eliminar_usuario(db: Session, user_id: int):
 
-    if usuario is None:
+    eliminado = crud.eliminar_usuario(db, user_id)
+
+    if not eliminado:
         raise UsuarioNoExisteError("El usuario no existe")
 
-    usuarios.remove(usuario)
+    return True
+
+
