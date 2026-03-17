@@ -1,16 +1,16 @@
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel
 
 
 class UserCreate(BaseModel):
     nombre: str
-    email: EmailStr
+    email: str
     eps_id: str
 
 
 class User(BaseModel):
     id: int
     nombre: str
-    email: EmailStr
+    email: str
     eps_id: str
 
     model_config = {
