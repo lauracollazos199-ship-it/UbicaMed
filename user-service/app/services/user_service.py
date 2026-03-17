@@ -41,9 +41,12 @@ def obtener_usuario_por_id(db: Session, user_id: int):
 # Crear usuario
 def crear_usuario(db: Session, user: User):
 
-    usuario = crud.crear_usuario(db, user)
+    existente = crud.obtener_usuario_por_id(db, user.id)
 
-    return usuario
+    if existente:
+        raise UsuarioYaExisteError("El usuario ya existe")
+
+    return crud.crear_usuario(db, user)
 
 
 # Eliminar usuario
