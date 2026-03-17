@@ -1,11 +1,22 @@
 from fastapi import APIRouter, HTTPException
 import requests
 from requests.exceptions import Timeout
+from pydantic import BaseModel
 
 router = APIRouter()
 
 HOSPITAL_SERVICE = "http://127.0.0.1:8001"
 GEO_SERVICE = "http://127.0.0.1:8002"
+USER_SERVICE = "http://127.0.0.1:8003"
+
+
+# ==============================
+# MODELO DE ENTRADA
+# ==============================
+
+class Ubicacion(BaseModel):
+    latitud: float
+    longitud: float
 
 
 # =================================
@@ -58,39 +69,6 @@ def hospital_por_id(hospital_id: int):
             )
 
         return response.json()
-    
-    except HTTPException:
-        raise
-
-    except Timeout as e:
-        raise HTTPException(
-            status_code=504,
-            detail="hospital-service no respondió a tiempo"
-        ) from e
-
-    except Exception as e:
-        raise HTTPException(
-            status_code=500,
-            detail=str(e)
-        ) from e
-
-
-@router.get("/hospitales/eps/{eps}")
-def hospitales_por_eps(eps: str):
-
-    try:
-        response = requests.get(
-            f"{HOSPITAL_SERVICE}/hospitales/eps/{eps}",
-            timeout=5
-        )
-
-        if response.status_code != 200:
-            raise HTTPException(
-                status_code=response.status_code,
-                detail="Error al filtrar hospitales"
-            )
-
-        return response.json()
 
     except Timeout as e:
         raise HTTPException(
@@ -106,82 +84,27 @@ def hospitales_por_eps(eps: str):
 
 
 # =================================
-# GEO SERVICE
+# ORQUESTACIÓN PRINCIPAL
 # =================================
 
-@router.post("/hospitales-ordenados")
-def hospitales_ordenados(data: dict):
+@router.post("/hospitales-cercanos/{user_id}")
+def hospitales_cercanos(user_id: int, ubicacion: Ubicacion):
 
     try:
-        response = requests.post(
-            f"{GEO_SERVICE}/hospitales-ordenados",
-            json=data,
+        # obtener usuario
+        response_user = requests.get(
+            f"{USER_SERVICE}/users/{user_id}",
             timeout=5
         )
 
-        if response.status_code != 200:
+        if response_user.status_code != 200:
             raise HTTPException(
-                status_code=response.status_code,
-                detail="Error en geo-service"
+                status_code=response_user.status_code,
+                detail="Error obteniendo usuario"
             )
 
-        return response.json()
-
-    except Timeout as e:
-        raise HTTPException(
-            status_code=504,
-            detail="geo-service no respondió a tiempo"
-        ) from e
-
-    except Exception as e:
-        raise HTTPException(
-            status_code=500,
-            detail=str(e)
-        ) from e
-
-
-@router.post("/hospital-mas-cercano")
-def hospital_mas_cercano(data: dict):
-
-    try:
-        response = requests.post(
-            f"{GEO_SERVICE}/hospital-mas-cercano",
-            json=data,
-            timeout=5
-        )
-
-        if response.status_code != 200:
-            raise HTTPException(
-                status_code=response.status_code,
-                detail="Error en geo-service"
-            )
-
-        return response.json()
-
-    except Timeout as e:
-        raise HTTPException(
-            status_code=504,
-            detail="geo-service no respondió a tiempo"
-        ) from e
-
-    except Exception as e:
-        raise HTTPException(
-            status_code=500,
-            detail=str(e)
-        ) from e
-
-
-# =================================
-# ORQUESTACIÓN DE MICROSERVICIOS
-# =================================
-
-@router.post("/hospitales-cercanos")
-def hospitales_cercanos(data: dict):
-
-    try:
-
-        eps = data.get("eps")
-        usuario = data.get("usuario")
+        usuario = response_user.json()
+        eps = usuario["eps"]
 
         # obtener hospitales por EPS
         response_hospital = requests.get(
@@ -197,11 +120,11 @@ def hospitales_cercanos(data: dict):
 
         hospitales = response_hospital.json()
 
-        # enviar hospitales a geo-service
+        # enviar a geo-service
         response_geo = requests.post(
             f"{GEO_SERVICE}/hospitales-ordenados",
             json={
-                "usuario": usuario,
+                "usuario": ubicacion.dict(),
                 "hospitales": hospitales
             },
             timeout=5
@@ -218,7 +141,7 @@ def hospitales_cercanos(data: dict):
     except Timeout as e:
         raise HTTPException(
             status_code=504,
-            detail="Uno de los microservicios no respondió a tiempo"
+            detail="Un microservicio no respondió a tiempo"
         ) from e
 
     except Exception as e:
