@@ -11,6 +11,7 @@ class HospitalLocation(BaseModel):
     nombre: str
     latitud: float
     longitud: float
+    direccion: str
 
 class HospitalesRequest(BaseModel):
     usuario: Location
