@@ -1,4 +1,3 @@
-
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from app.database.database import get_db
@@ -19,7 +18,6 @@ router = APIRouter(
     prefix="/users",
     tags=["Users"]
 )
-
 
 # ==============================
 # LISTAR USUARIOS
@@ -49,14 +47,17 @@ def usuario_por_id(user_id: int, db: Session = Depends(get_db)):
 # CREAR USUARIO
 # ==============================
 
-
 @router.post("")
 def agregar_usuario(user: UserCreate, db: Session = Depends(get_db)):
     try:
         return crear_usuario(db, user)
+
     except UsuarioYaExisteError as e:
-        raise HTTPException(status_code=400, detail=str(e))from e
-    
+        raise HTTPException(status_code=400, detail=str(e)) from e
+
+    except ValueError as e:   # errores del validator de password
+        raise HTTPException(status_code=400, detail=str(e)) from e
+
 
 # ==============================
 # ELIMINAR USUARIO
@@ -67,5 +68,7 @@ def borrar_usuario(user_id: int, db: Session = Depends(get_db)):
     try:
         eliminar_usuario(db, user_id)
         return {"mensaje": "Usuario eliminado correctamente"}
+
     except UsuarioNoExisteError as e:
         raise HTTPException(status_code=404, detail=str(e)) from e
+
