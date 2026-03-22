@@ -12,6 +12,7 @@ class UserCreate(BaseModel):
     eps_id: int
 
     @field_validator("password")
+    @classmethod
     def validar_password(cls, v):
 
         if len(v) < 8:
