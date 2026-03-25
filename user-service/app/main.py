@@ -6,6 +6,7 @@ from app.database import models_db
 app = FastAPI()
 
 
+
 Base.metadata.create_all(bind=engine)
 
 
