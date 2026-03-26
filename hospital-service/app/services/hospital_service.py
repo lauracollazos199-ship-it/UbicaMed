@@ -1,68 +1,35 @@
 from sqlalchemy.orm import Session
-from app.database.models_db import HospitalDB, EPSDB
+from app.database import crud
+from app.models.hospital import HospitalCrear
 
 
 def obtener_hospitales(db: Session):
-    hospitales = db.query(HospitalDB).all()
-
+    hospitales = crud.obtener_hospitales(db)
     if not hospitales:
         raise ValueError("No hay hospitales registrados")
-
     return hospitales
 
 
 def obtener_hospital_por_id(db: Session, hospital_id: int):
-
-    hospital = db.query(HospitalDB).filter(
-        HospitalDB.id == hospital_id
-    ).first()
-
+    hospital = crud.obtener_hospital_por_id(db, hospital_id)
     if hospital is None:
         raise ValueError("Hospital no encontrado")
-
     return hospital
 
 
 def obtener_hospitales_por_eps(db: Session, eps_nombre: str):
-
-    hospitales = (
-        db.query(HospitalDB)
-        .join(EPSDB)
-        .filter(EPSDB.nombre == eps_nombre)
-        .all()
-    )
-
+    hospitales = crud.obtener_hospitales_por_eps(db, eps_nombre)
     if not hospitales:
         raise ValueError("No hay hospitales para esa EPS")
-
     return hospitales
 
 
-def crear_hospital(db: Session, nombre: str, latitud: float, longitud: float):
-
-    hospital = HospitalDB(
-        nombre=nombre,
-        latitud=latitud,
-        longitud=longitud
-    )
-
-    db.add(hospital)
-    db.commit()
-    db.refresh(hospital)
-
-    return hospital
+def crear_hospital(db: Session, hospital: HospitalCrear):
+    return crud.crear_hospital(db, hospital)
 
 
 def eliminar_hospital(db: Session, hospital_id: int):
-
-    hospital = db.query(HospitalDB).filter(
-        HospitalDB.id == hospital_id
-    ).first()
-
+    hospital = crud.eliminar_hospital(db, hospital_id)
     if hospital is None:
         raise ValueError("Hospital no encontrado")
-
-    db.delete(hospital)
-    db.commit()
-
-    return True
+    return {"mensaje": "Hospital eliminado correctamente"}

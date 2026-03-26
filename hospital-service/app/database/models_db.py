@@ -13,15 +13,16 @@ class HospitalDB(Base):
     longitud = Column(Float)
 
     convenios = relationship(
-    "ConvenioDB",
-    back_populates="hospital",
-    cascade="all, delete"
-)
-    
+        "ConvenioDB",
+        back_populates="hospital",
+        cascade="all, delete"
+    )
+
     eps = relationship(
         "EPSDB",
         secondary="convenios",
-        viewonly=True)
+        back_populates="hospitales"
+    )
 
 
 class EPSDB(Base):
@@ -32,6 +33,11 @@ class EPSDB(Base):
 
     convenios = relationship("ConvenioDB", back_populates="eps")
 
+    hospitales = relationship(
+        "HospitalDB",
+        secondary="convenios",
+        back_populates="eps"
+    )
 
 
 class ConvenioDB(Base):
