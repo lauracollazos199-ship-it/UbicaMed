@@ -1,19 +1,19 @@
 from pydantic import BaseModel, EmailStr, field_validator
 import re
-from datetime import date
-
 
 class UserCreate(BaseModel):
 
     nombre: str
     email: EmailStr
     password: str
-    fecha_nacimiento: date
     eps_id: int
 
     @field_validator("password")
     @classmethod
     def validar_password(cls, v):
+
+        if len(v) > 64:
+            raise ValueError("La contraseña no puede tener más de 64 caracteres")
 
         if len(v) < 8:
             raise ValueError("La contraseña debe tener al menos 8 caracteres")
@@ -39,7 +39,7 @@ class User(BaseModel):
     email: str
     eps_id: int
     password: str
-    fecha_nacimiento: date
+   
   
     model_config = {
         "from_attributes": True
