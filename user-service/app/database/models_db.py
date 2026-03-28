@@ -11,7 +11,6 @@ class UserDB(Base):
     nombre = Column(String, nullable=False)
     email = Column(String, unique=True, index=True, nullable=False)
     password = Column(String, nullable=False)
-    eps_id = Column(Integer, nullable=False)
 
    
 
