@@ -6,7 +6,7 @@ class UserCreate(BaseModel):
     nombre: str
     email: EmailStr
     password: str
-    eps_id: int
+
 
     @field_validator("password")
     @classmethod
@@ -37,7 +37,6 @@ class User(BaseModel):
     id: int
     nombre: str
     email: str
-    eps_id: int
     password: str
    
   

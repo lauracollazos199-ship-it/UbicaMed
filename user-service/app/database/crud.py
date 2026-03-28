@@ -16,7 +16,7 @@ def crear_usuario(db: Session, user: UserCreate):
         nombre=user.nombre,
         email=user.email,
         password=user.password,
-        eps_id=user.eps_id
+
     )
     db.add(nuevo_usuario)
     db.commit()

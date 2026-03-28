@@ -20,7 +20,7 @@ JWT_ALGORITHM = os.getenv("JWT_ALGORITHM")
 
 
 class GoogleLoginRequest(BaseModel):
-    token: str  # El id_token que envía Google
+    token: str  
 
 
 @router.post("/google")
@@ -34,17 +34,16 @@ def login_google(data: GoogleLoginRequest, db: Session = Depends(get_db)):
         if not name:
             name = email.split("@")[0]  
 
-        # 2️⃣ Crear usuario nuevo directamente (porque tu servicio solo busca por ID)
-        # Aquí usamos tu UserCreate actual
+        
         user_create = UserCreate(
             nombre=name,
             email=email,
             password="GoogleLogin123!",  # Contraseña temporal obligatoria para el modelo
-            eps_id=1  # Valor por defecto para eps_id, puedes ajustar
+            
         )
         nuevo_usuario = crear_usuario(db, user_create)
 
-        # 3️⃣ Generar JWT
+        
         payload = {"user_id": nuevo_usuario.id, "email": nuevo_usuario.email}
         token_jwt = jwt.encode(payload, JWT_SECRET, algorithm=JWT_ALGORITHM)
 
