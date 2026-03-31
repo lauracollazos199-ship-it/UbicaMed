@@ -1,11 +1,10 @@
-from sqlalchemy import Column, ForeignKey, Integer, String, Date
+from sqlalchemy import Column, Integer, String, ForeignKey, Date
 from sqlalchemy.orm import relationship
 from app.database.database import Base
 
 
 class UserDB(Base):
-
-    __tablename__ = "users"
+    _tablename_ = "users"
 
     id = Column(Integer, primary_key=True, index=True)
     nombre = Column(String, nullable=False)

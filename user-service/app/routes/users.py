@@ -71,4 +71,3 @@ def borrar_usuario(user_id: int, db: Session = Depends(get_db)):
 
     except UsuarioNoExisteError as e:
         raise HTTPException(status_code=404, detail=str(e)) from e
-
