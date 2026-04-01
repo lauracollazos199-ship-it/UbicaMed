@@ -1,6 +1,7 @@
 from sqlalchemy.orm import Session
 from app.database.models_db import HospitalDB, EPSDB, ConvenioDB
 from app.models.hospital import HospitalCrear
+from sqlalchemy import func
 
 
 # Obtener todos los hospitales (ordenados)
@@ -64,10 +65,14 @@ def obtener_hospitales_por_eps(db: Session, nombre_eps: str):
         db.query(HospitalDB)
         .join(ConvenioDB, HospitalDB.id == ConvenioDB.hospital_id)
         .join(EPSDB, EPSDB.id == ConvenioDB.eps_id)
-        .filter(EPSDB.nombre == nombre_eps)
+        .filter(func.lower(EPSDB.nombre) == nombre_eps.lower())
         .order_by(HospitalDB.id.asc())
         .distinct()
         .all()
     )
 
     return hospitales
+
+# Obtener EPS
+def obtener_eps(db: Session):
+    return db.query(EPSDB).order_by(EPSDB.nombre.asc()).all()

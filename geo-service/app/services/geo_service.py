@@ -42,14 +42,17 @@ def hospitales_ordenados(usuario: Location, hospitales: list[HospitalLocation]):
 
     try:
 
+        if not hospitales:
+            raise HospitalNoEncontradoError("No hay hospitales disponibles")
+
         resultado = []
 
         for hospital in hospitales:
 
-            distancia = calcular_distancia(usuario, hospital)
+            distancia = round(calcular_distancia(usuario, hospital),2)
 
             resultado.append({
-                "hospital": hospital,
+                **hospital.dict(),
                 "distancia_km": distancia
             })
 

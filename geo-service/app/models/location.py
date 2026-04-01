@@ -12,7 +12,16 @@ class HospitalLocation(BaseModel):
     latitud: float
     longitud: float
     direccion: str
+    
+    model_config = {
+        "extra": "ignore"
+    }
 
+class HospitalConDistancia(BaseModel):
+    hospital: HospitalLocation
+    distancia_km: float
+
+    
 class HospitalesRequest(BaseModel):
     usuario: Location
     hospitales: List[HospitalLocation]

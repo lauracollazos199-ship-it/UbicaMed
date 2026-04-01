@@ -9,6 +9,12 @@ def obtener_hospitales(db: Session):
         raise ValueError("No hay hospitales registrados")
     return hospitales
 
+def obtener_eps(db: Session):
+    eps = crud.obtener_eps(db)
+    if not eps:
+        raise ValueError("No hay EPS registradas")
+    return eps
+
 
 def obtener_hospital_por_id(db: Session, hospital_id: int):
     hospital = crud.obtener_hospital_por_id(db, hospital_id)
@@ -20,7 +26,7 @@ def obtener_hospital_por_id(db: Session, hospital_id: int):
 def obtener_hospitales_por_eps(db: Session, eps_nombre: str):
     hospitales = crud.obtener_hospitales_por_eps(db, eps_nombre)
     if not hospitales:
-        raise ValueError("No hay hospitales para esa EPS")
+        raise ValueError("No hay hospitales para esa EPS '{eps_nombre}'")
     return hospitales
 
 
@@ -33,3 +39,4 @@ def eliminar_hospital(db: Session, hospital_id: int):
     if hospital is None:
         raise ValueError("Hospital no encontrado")
     return {"mensaje": "Hospital eliminado correctamente"}
+
