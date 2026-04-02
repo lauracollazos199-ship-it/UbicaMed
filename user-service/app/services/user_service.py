@@ -1,5 +1,5 @@
 from sqlalchemy.orm import Session
-from app.database.crud import obtener_usuarios as crud_listar, obtener_usuario_por_id as crud_por_id, crear_usuario as crud_crear, eliminar_usuario as crud_eliminar
+from app.database.crud import obtener_usuarios as crud_listar, obtener_usuario_por_id as crud_por_id, crear_usuario as crud_crear, eliminar_usuario as crud_eliminar, actualizar_usuario as crud_actualizar
 from app.models.user import User
 from app.database.models_db import UserDB
 
@@ -36,3 +36,12 @@ def eliminar_usuario(db: Session, user_id: int):
         raise UsuarioNoExisteError(f"El usuario con ID {user_id} no existe")
     crud_eliminar(db, user_id)
     return True
+
+# Actualizar usuario
+def actualizar_usuario(db: Session, user_id: int, datos: dict):
+    usuario = crud_por_id(db, user_id)
+
+    if usuario is None:
+        raise UsuarioNoExisteError(f"El usuario con ID {user_id} no existe")
+
+    return crud_actualizar(db, user_id, datos)

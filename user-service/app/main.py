@@ -8,9 +8,7 @@ app = FastAPI()
 
 app.include_router(google_login.router)
 
-
 Base.metadata.create_all(bind=engine)
-
 
 app.include_router(user_router)
 

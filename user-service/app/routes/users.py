@@ -7,12 +7,13 @@ from app.services.user_service import (
     obtener_usuario_por_id,
     crear_usuario,
     eliminar_usuario,
+    actualizar_usuario,
     ListaUsuariosVaciaError,
     UsuarioNoExisteError,
     UsuarioYaExisteError
 )
 
-from app.models.user import UserCreate
+from app.models.user import UserCreate, UserUpdate
 
 router = APIRouter(
     prefix="/users",
@@ -68,6 +69,23 @@ def borrar_usuario(user_id: int, db: Session = Depends(get_db)):
     try:
         eliminar_usuario(db, user_id)
         return {"mensaje": "Usuario eliminado correctamente"}
+
+    except UsuarioNoExisteError as e:
+        raise HTTPException(status_code=404, detail=str(e)) from e
+    
+
+# ==============================
+# ACTUALIZAR USUARIO
+# ==============================
+
+@router.put("/{user_id}")
+def actualizar(user_id: int, datos: UserUpdate, db: Session = Depends(get_db)):
+    try:
+        return actualizar_usuario(
+            db,
+            user_id,
+            datos.dict(exclude_unset=True)   
+        )
 
     except UsuarioNoExisteError as e:
         raise HTTPException(status_code=404, detail=str(e)) from e

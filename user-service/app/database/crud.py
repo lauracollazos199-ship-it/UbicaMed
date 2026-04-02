@@ -8,7 +8,7 @@ def obtener_usuarios(db: Session):
 
 # Obtener usuario por ID
 def obtener_usuario_por_id(db: Session, user_id: int):
-    return db.query(UserDB).filter(UserDB.id == user_id).first()  # NO cambies a try/except, el servicio se encarga
+    return db.query(UserDB).filter(UserDB.id == user_id).first()
 
 # Crear usuario
 def crear_usuario(db: Session, user: UserCreate):
@@ -16,12 +16,24 @@ def crear_usuario(db: Session, user: UserCreate):
         nombre=user.nombre,
         email=user.email,
         password=user.password,
-
     )
     db.add(nuevo_usuario)
     db.commit()
     db.refresh(nuevo_usuario)
     return nuevo_usuario
+
+# Actualizar usuario
+def actualizar_usuario(db: Session, user_id: int, datos: dict):
+    usuario = db.query(UserDB).filter(UserDB.id == user_id).first()
+
+    if usuario:
+        for key, value in datos.items():
+            setattr(usuario, key, value)
+
+        db.commit()
+        db.refresh(usuario)
+
+    return usuario
 
 # Eliminar usuario
 def eliminar_usuario(db: Session, user_id: int):
