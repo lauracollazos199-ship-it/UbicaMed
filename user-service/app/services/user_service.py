@@ -22,6 +22,10 @@ def obtener_usuario_por_id(db: Session, user_id: int):
         raise UsuarioNoExisteError(f"El usuario con ID {user_id} no existe")
     return usuario
 
+# Obtener usuario por email
+def obtener_usuario_por_email(db: Session, email: str):
+    return db.query(UserDB).filter(UserDB.email == email).first()
+
 # Crear usuario
 def crear_usuario(db: Session, user: User):
     existente = db.query(UserDB).filter(UserDB.email == user.email).first()

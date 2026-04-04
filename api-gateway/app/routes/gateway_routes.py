@@ -1,16 +1,86 @@
 from fastapi import APIRouter, HTTPException
 import requests
 from requests.exceptions import Timeout
+from pydantic import BaseModel, EmailStr
+
+class GoogleLoginRequest(BaseModel):
+    token: str
+
+class LoginRequest(BaseModel):
+    email: EmailStr
+    password: str
 
 router = APIRouter()
 
 HOSPITAL_SERVICE = "http://127.0.0.1:8001"
 GEO_SERVICE = "http://127.0.0.1:8002"
+USER_SERVICE = "http://127.0.0.1:8003"
 
 
+# AUTH - GOOGLE
+@router.post("/auth/google")
+def login_google(data: GoogleLoginRequest):
+
+    try:
+        response = requests.post(
+            f"{USER_SERVICE}/auth/google",
+            json=data.model_dump(),
+            timeout=5
+        )
+
+        if response.status_code != 200:
+            raise HTTPException(
+                status_code=response.status_code,
+                detail="Error en autenticación con Google"
+            )
+
+        return response.json()
+
+    except Timeout as e:
+        raise HTTPException(
+            status_code=504,
+            detail="user-service no respondió a tiempo"
+        ) from e
+
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=str(e)
+        ) from e
+    
+# LOGIN NORMAL
+@router.post("/auth/login")
+def login(data: LoginRequest):
+
+    try:
+        response = requests.post(
+            f"{USER_SERVICE}/auth/login",
+            json=data.model_dump(),
+            timeout=5
+        )
+
+        if response.status_code != 200:
+            raise HTTPException(
+                status_code=response.status_code,
+                detail="Error en login"
+            )
+
+        return response.json()
+
+    except Timeout as e:
+        raise HTTPException(
+            status_code=504,
+            detail="user-service no respondió a tiempo"
+        ) from e
+
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=str(e)
+        ) from e
+    
 
 # LISTAR EPS
-
 @router.get("/eps")
 def listar_eps():
 
@@ -43,7 +113,6 @@ def listar_eps():
 
 
 # ENDPOINT PRINCIPAL
-
 @router.get("/hospitales")
 def hospitales_cercanos(eps: str, lat: float, lng: float):
 
@@ -115,7 +184,6 @@ def hospitales_cercanos(eps: str, lat: float, lng: float):
 
 
 # DETALLE DE HOSPITAL
-
 @router.get("/hospitales/{hospital_id}")
 def hospital_por_id(hospital_id: int):
 
