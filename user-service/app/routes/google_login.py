@@ -37,7 +37,10 @@ def login_google(data: GoogleLoginRequest, db: Session = Depends(get_db)):
         )
 
         email = idinfo.get("email")
-        name = idinfo.get("name") or email.split("@")[0]  
+        name = idinfo.get("name")
+
+        if not name:
+            name = email.split("@")[0].capitalize()
 
         if not email:
             raise HTTPException(
@@ -57,6 +60,13 @@ def login_google(data: GoogleLoginRequest, db: Session = Depends(get_db)):
             )
             usuario = crear_usuario(db, user_create)
 
+        else:
+            if not usuario.nombre or usuario.nombre == email.split("@")[0]:
+                usuario.nombre = name
+                db.commit()
+                db.refresh(usuario)
+
+
         # 🔹 4. Generar JWT con expiración
         payload = {
             "user_id": usuario.id,
@@ -73,7 +83,9 @@ def login_google(data: GoogleLoginRequest, db: Session = Depends(get_db)):
         # 🔹 5. Respuesta
         return {
             "access_token": token_jwt,
-            "token_type": "bearer"
+            "token_type": "bearer",
+            "nombre": usuario.nombre,
+            "email": usuario.email
         }
 
     except Exception as e:
@@ -113,7 +125,9 @@ def login(data: UserLogin, db: Session = Depends(get_db)):
 
         return {
             "access_token": token_jwt,
-            "token_type": "bearer"
+            "token_type": "bearer",
+            "nombre": usuario.nombre,
+            "email": usuario.email
         }
 
     except Exception as e:
