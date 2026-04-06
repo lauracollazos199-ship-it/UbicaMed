@@ -1,5 +1,7 @@
 from datetime import datetime, timedelta
 import os
+import smtplib
+from email.mime.text import MIMEText
 
 from fastapi import APIRouter, HTTPException, Depends
 from pydantic import BaseModel
@@ -8,6 +10,7 @@ from google.oauth2 import id_token
 from google.auth.transport import requests as google_requests
 from sqlalchemy.orm import Session
 from dotenv import load_dotenv
+
 
 from app.database.database import get_db
 from app.services.user_service import crear_usuario, obtener_usuario_por_email
@@ -20,6 +23,9 @@ router = APIRouter(prefix="/auth", tags=["Auth"])
 GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID")
 JWT_SECRET = os.getenv("JWT_SECRET")
 JWT_ALGORITHM = os.getenv("JWT_ALGORITHM")
+
+MAILTRAP_USER = os.getenv("MAILTRAP_USER")
+MAILTRAP_PASS = os.getenv("MAILTRAP_PASS")
 
 
 class GoogleLoginRequest(BaseModel):
@@ -48,10 +54,10 @@ def login_google(data: GoogleLoginRequest, db: Session = Depends(get_db)):
                 detail="No se pudo obtener el email del usuario"
             )
 
-        # 🔹 2. Buscar usuario en BD
+        # 2. Buscar usuario en BD
         usuario = obtener_usuario_por_email(db, email)
 
-        # 🔹 3. Crear usuario si no existe
+        # 3. Crear usuario si no existe
         if not usuario:
             user_create = UserCreate(
                 nombre=name,
@@ -67,7 +73,7 @@ def login_google(data: GoogleLoginRequest, db: Session = Depends(get_db)):
                 db.refresh(usuario)
 
 
-        # 🔹 4. Generar JWT con expiración
+        # 4. Generar JWT con expiración
         payload = {
             "user_id": usuario.id,
             "email": usuario.email,
@@ -80,7 +86,7 @@ def login_google(data: GoogleLoginRequest, db: Session = Depends(get_db)):
             algorithm=JWT_ALGORITHM
         )
 
-        # 🔹 5. Respuesta
+        # 5. Respuesta
         return {
             "access_token": token_jwt,
             "token_type": "bearer",
@@ -98,7 +104,7 @@ def login_google(data: GoogleLoginRequest, db: Session = Depends(get_db)):
 @router.post("/login")
 def login(data: UserLogin, db: Session = Depends(get_db)):
     try:
-        # 🔹 1. Buscar usuario
+        # 1. Buscar usuario
         usuario = obtener_usuario_por_email(db, data.email)
 
         if not usuario:
@@ -107,14 +113,14 @@ def login(data: UserLogin, db: Session = Depends(get_db)):
                 detail="El usuario no existe"
             )
 
-        # 🔹 2. Validar contraseña
+        # 2. Validar contraseña
         if usuario.password != data.password:
             raise HTTPException(
                 status_code=401,
                 detail="Credenciales inválidas"
             )
 
-        # 🔹 3. Generar JWT
+        # 3. Generar JWT
         payload = {
             "user_id": usuario.id,
             "email": usuario.email,
@@ -135,3 +141,99 @@ def login(data: UserLogin, db: Session = Depends(get_db)):
             status_code=400,
             detail=str(e)
         ) from e
+    
+
+@router.post("/forgot-password")
+def forgot_password(data: dict, db: Session = Depends(get_db)):
+
+    email = data.get("email")
+
+    usuario = obtener_usuario_por_email(db, email)
+
+    if not usuario:
+        raise HTTPException(404, "Usuario no existe")
+
+    # bloquear usuarios Google
+    if usuario.password == "GoogleLogin123!":
+        raise HTTPException(400, "Este usuario usa Google para iniciar sesión")
+
+    token = jwt.encode({
+        "email": email,
+        "exp": datetime.utcnow() + timedelta(minutes=10)
+    }, JWT_SECRET, algorithm="HS256")
+
+    link = f"http://127.0.0.1:5500/reset.html?token={token}"
+    
+    # enviar correo
+    send_reset_email(email, link)
+
+    return {
+    "message": "Si el correo existe, se enviará un enlace para recuperar la contraseña"
+    }
+
+
+@router.post("/reset-password")
+def reset_password(data: dict, db: Session = Depends(get_db)):
+
+    token = data.get("token")
+    new_password = data.get("password")
+
+    if not new_password:
+        raise HTTPException(400, "Debe ingresar una nueva contraseña")
+
+    try:
+        payload = jwt.decode(token, JWT_SECRET, algorithms=["HS256"])
+        email = payload["email"]
+    except Exception as e:
+        raise HTTPException(400, "Token inválido o expirado") from e
+
+    usuario = obtener_usuario_por_email(db, email)
+
+    if not usuario:
+        raise HTTPException(404, "Usuario no existe")
+
+    usuario.password = new_password
+    db.commit()
+    db.refresh(usuario)
+
+    return {"message": "Contraseña actualizada"}
+
+# Mensaje para recuperar contraseña
+def send_reset_email(email, link):
+
+    msg = MIMEText(f"""
+    <html>
+      <body style="font-family: Arial; text-align: center;">
+        <h2 style="color:#1E6FB9;">Recuperar contraseña</h2>
+        
+        <p>Hola,</p>
+        
+        <p>Haz clic en el siguiente botón para cambiar tu contraseña:</p>
+
+        <a href="{link}" 
+           style="
+             display:inline-block;
+             padding:12px 20px;
+             background:#1E6FB9;
+             color:white;
+             text-decoration:none;
+             border-radius:5px;
+             font-weight:bold;
+           ">
+           Cambiar contraseña
+        </a>
+
+        <p style="margin-top:20px; font-size:12px; color:gray;">
+          Este enlace expira en 10 minutos.
+        </p>
+      </body>
+    </html>
+    """, "html")
+
+    msg["Subject"] = "Recuperar contraseña"
+    msg["From"] = "noreply@ubicamed.com"
+    msg["To"] = email
+
+    with smtplib.SMTP("sandbox.smtp.mailtrap.io", 2525) as server:
+        server.login(MAILTRAP_USER, MAILTRAP_PASS)
+        server.send_message(msg)

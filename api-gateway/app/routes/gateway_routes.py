@@ -10,6 +10,13 @@ class LoginRequest(BaseModel):
     email: EmailStr
     password: str
 
+class ForgotPasswordRequest(BaseModel):
+    email: EmailStr
+
+class ResetPasswordRequest(BaseModel):
+    token: str
+    password: str
+
 router = APIRouter()
 
 HOSPITAL_SERVICE = "http://127.0.0.1:8001"
@@ -47,6 +54,7 @@ def login_google(data: GoogleLoginRequest):
             status_code=500,
             detail=str(e)
         ) from e
+  
     
 # LOGIN NORMAL
 @router.post("/auth/login")
@@ -63,6 +71,66 @@ def login(data: LoginRequest):
             raise HTTPException(
                 status_code=response.status_code,
                 detail="Error en login"
+            )
+
+        return response.json()
+
+    except Timeout as e:
+        raise HTTPException(
+            status_code=504,
+            detail="user-service no respondió a tiempo"
+        ) from e
+
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=str(e)
+        ) from e
+    
+@router.post("/auth/forgot-password")
+def forgot_password(data: ForgotPasswordRequest):
+
+    try:
+        response = requests.post(
+            f"{USER_SERVICE}/auth/forgot-password",
+            json=data.model_dump(),
+            timeout=5
+        )
+
+        if response.status_code != 200:
+            raise HTTPException(
+                status_code=response.status_code,
+                detail=response.json().get("detail", "Error en recuperación de contraseña")
+            )
+
+        return response.json()
+
+    except Timeout as e:
+        raise HTTPException(
+            status_code=504,
+            detail="user-service no respondió a tiempo"
+        ) from e
+    
+    except requests.exceptions.RequestException as e:
+        raise HTTPException(
+        status_code=500,
+        detail="Error de conexión con user-service"
+    ) from e
+
+@router.post("/auth/reset-password")
+def reset_password(data: ResetPasswordRequest):
+
+    try:
+        response = requests.post(
+            f"{USER_SERVICE}/auth/reset-password",
+            json=data.model_dump(),
+            timeout=5
+        )
+
+        if response.status_code != 200:
+            raise HTTPException(
+                status_code=response.status_code,
+                detail=response.json().get("detail", "Error al cambiar contraseña")
             )
 
         return response.json()
@@ -117,7 +185,7 @@ def listar_eps():
 def hospitales_cercanos(eps: str, lat: float, lng: float):
 
     try:
-        # 🔹 Validaciones
+        # Validaciones
         if lat < -90 or lat > 90:
             raise HTTPException(
                 status_code=400,
@@ -144,11 +212,11 @@ def hospitales_cercanos(eps: str, lat: float, lng: float):
 
         hospitales = response_hospital.json()
 
-        # 🔹 Validar lista vacía
+        # Validar lista vacía
         if not hospitales:
             return []
 
-        # 🔹 2. Calcular distancias en geo-service
+        # 2. Calcular distancias en geo-service
         response_geo = requests.post(
             f"{GEO_SERVICE}/geo/hospitales-cercanos",
             json={
