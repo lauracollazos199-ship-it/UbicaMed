@@ -3,6 +3,7 @@ import os
 import smtplib
 from email.mime.text import MIMEText
 
+
 from fastapi import APIRouter, HTTPException, Depends
 from pydantic import BaseModel
 from jose import jwt
@@ -14,7 +15,8 @@ from dotenv import load_dotenv
 
 from app.database.database import get_db
 from app.services.user_service import crear_usuario, obtener_usuario_por_email
-from app.models.user import UserCreate, UserLogin
+from app.models.user import UserCreate, UserLogin, ResetPasswordRequest
+
 
 load_dotenv()
 
@@ -30,6 +32,8 @@ MAILTRAP_PASS = os.getenv("MAILTRAP_PASS")
 
 class GoogleLoginRequest(BaseModel):
     token: str  
+
+
 
 
 @router.post("/google")
@@ -173,10 +177,10 @@ def forgot_password(data: dict, db: Session = Depends(get_db)):
 
 
 @router.post("/reset-password")
-def reset_password(data: dict, db: Session = Depends(get_db)):
+def reset_password(data: ResetPasswordRequest, db: Session = Depends(get_db)):
 
-    token = data.get("token")
-    new_password = data.get("password")
+    token = data.token
+    new_password = data.password
 
     if not new_password:
         raise HTTPException(400, "Debe ingresar una nueva contraseña")
