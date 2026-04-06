@@ -5,6 +5,8 @@ from pydantic import BaseModel, EmailStr, field_validator
 
 
 def validar_password_rules(v: str):
+    v = v.strip()
+
     if len(v) > 64:
         raise ValueError("La contraseña no puede tener más de 64 caracteres")
 
@@ -12,16 +14,16 @@ def validar_password_rules(v: str):
         raise ValueError("La contraseña debe tener al menos 8 caracteres")
 
     if not re.search(r"[A-Z]", v):
-        raise ValueError("Debe tener una mayúscula")
+        raise ValueError("La contraseña debe incluir al menos una mayúscula")
 
     if not re.search(r"[a-z]", v):
-        raise ValueError("Debe tener una minúscula")
+        raise ValueError("La contraseña debe incluir al menos una minúscula")
 
     if not re.search(r"[0-9]", v):
-        raise ValueError("Debe tener un número")
+        raise ValueError("La contraseña debe incluir al menos un número")
 
     if not re.search(r"[!@#$%^&*(),.?\":{}|<>]", v):
-        raise ValueError("Debe tener un carácter especial")
+        raise ValueError("La contraseña debe incluir al menos un carácter especial")
 
     return v
 
@@ -33,6 +35,8 @@ class UserUpdate(BaseModel):
     @field_validator("password")
     @classmethod
     def validar_password(cls, v):
+        if v is None:
+            return v
         return validar_password_rules(v)
 
 class UserCreate(BaseModel):
@@ -45,15 +49,13 @@ class UserCreate(BaseModel):
     @field_validator("password")
     @classmethod
     def validar_password(cls, v):
-        if v is None:
-            return v
         return validar_password_rules(v)
 
 
 class User(BaseModel):
     id: int
     nombre: str
-    email: str
+    email: EmailStr
     password: str
    
   
@@ -72,4 +74,4 @@ class ResetPasswordRequest(BaseModel):
     @field_validator("password")
     @classmethod
     def validar_password(cls, v):
-        return UserUpdate.validar_password(v)
+        return validar_password_rules(v)
