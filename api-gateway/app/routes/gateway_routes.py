@@ -54,8 +54,8 @@ def login_google(data: GoogleLoginRequest):
             status_code=500,
             detail=str(e)
         ) from e
-  
-    
+
+
 # LOGIN NORMAL
 @router.post("/auth/login")
 def login(data: LoginRequest):
@@ -86,7 +86,8 @@ def login(data: LoginRequest):
             status_code=500,
             detail=str(e)
         ) from e
-    
+
+
 @router.post("/auth/forgot-password")
 def forgot_password(data: ForgotPasswordRequest):
 
@@ -110,12 +111,13 @@ def forgot_password(data: ForgotPasswordRequest):
             status_code=504,
             detail="user-service no respondió a tiempo"
         ) from e
-    
+
     except requests.exceptions.RequestException as e:
         raise HTTPException(
-        status_code=500,
-        detail="Error de conexión con user-service"
-    ) from e
+            status_code=500,
+            detail="Error de conexión con user-service"
+        ) from e
+
 
 @router.post("/auth/reset-password")
 def reset_password(data: ResetPasswordRequest):
@@ -146,7 +148,37 @@ def reset_password(data: ResetPasswordRequest):
             status_code=500,
             detail=str(e)
         ) from e
-    
+
+
+@router.post("/users")
+def registrar_usuario(data: dict):
+    try:
+        response = requests.post(
+            f"{USER_SERVICE}/users",
+            json=data,
+            timeout=5
+        )
+
+        if response.status_code != 200:
+            raise HTTPException(
+                status_code=response.status_code,
+                detail=response.json().get("detail", "Error en registro")
+            )
+
+        return response.json()
+
+    except Timeout as e:
+        raise HTTPException(
+            status_code=504,
+            detail="user-service no respondió a tiempo"
+        ) from e
+
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=str(e)
+        ) from e
+
 
 # LISTAR EPS
 @router.get("/eps")
@@ -177,7 +209,6 @@ def listar_eps():
             status_code=500,
             detail=str(e)
         ) from e
-
 
 
 # ENDPOINT PRINCIPAL
@@ -248,7 +279,6 @@ def hospitales_cercanos(eps: str, lat: float, lng: float):
             status_code=500,
             detail=str(e)
         ) from e
-
 
 
 # DETALLE DE HOSPITAL
