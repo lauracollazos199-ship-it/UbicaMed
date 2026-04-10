@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Body
 import requests
 from requests.exceptions import Timeout
 from pydantic import BaseModel, EmailStr
@@ -163,6 +163,36 @@ def registrar_usuario(data: dict):
             raise HTTPException(
                 status_code=response.status_code,
                 detail=response.json().get("detail", "Error en registro")
+            )
+
+        return response.json()
+
+    except Timeout as e:
+        raise HTTPException(
+            status_code=504,
+            detail="user-service no respondió a tiempo"
+        ) from e
+
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=str(e)
+        ) from e
+
+@router.put("/users/{user_id}")
+def actualizar_usuario(user_id: int, data: dict = Body(...)):
+
+    try:
+        response = requests.put(
+            f"{USER_SERVICE}/users/{user_id}",
+            json=data,
+            timeout=5
+        )
+
+        if response.status_code != 200:
+            raise HTTPException(
+                status_code=response.status_code,
+                detail=response.json().get("detail", "Error al actualizar usuario")
             )
 
         return response.json()

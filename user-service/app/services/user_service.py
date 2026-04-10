@@ -41,11 +41,33 @@ def eliminar_usuario(db: Session, user_id: int):
     crud_eliminar(db, user_id)
     return True
 
-# Actualizar usuario
-def actualizar_usuario(db: Session, user_id: int, datos: dict):
-    usuario = crud_por_id(db, user_id)
 
-    if usuario is None:
+def actualizar_usuario(db: Session, user_id: int, datos: dict):
+    usuario = obtener_usuario_por_id(db, user_id)
+    if not usuario:
         raise UsuarioNoExisteError(f"El usuario con ID {user_id} no existe")
 
-    return crud_actualizar(db, user_id, datos)
+    es_google = usuario.password == "GoogleAuth123!"
+
+    # Bloquear cambio de contraseña para Google
+    if es_google and "password" in datos:
+        raise ValueError("Los usuarios de Google no pueden cambiar contraseña")
+
+    # Validar contraseña actual para usuarios normales
+    if "password" in datos:
+        old_password = datos.get("old_password")
+        if not old_password:
+            raise ValueError("Debes ingresar la contraseña actual")
+        if usuario.password != old_password:
+            raise ValueError("La contraseña actual no coincide")
+
+    # Validar si realmente hay cambios
+    cambios = {}
+    for key, value in datos.items():
+        if key in {"nombre", "email", "password"} and getattr(usuario, key) != value:
+            cambios[key] = value
+
+    if not cambios:
+        raise ValueError("No hay cambios para actualizar")
+
+    return crud_actualizar(db, user_id, cambios)

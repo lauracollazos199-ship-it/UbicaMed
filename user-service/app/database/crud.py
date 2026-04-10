@@ -2,6 +2,8 @@ from sqlalchemy.orm import Session
 from app.database.models_db import UserDB
 from app.models.user import UserCreate
 
+ALLOWED_FIELDS = {"nombre", "email", "password"}
+
 # Obtener todos los usuarios
 def obtener_usuarios(db: Session):
     return db.query(UserDB).all()
@@ -24,14 +26,19 @@ def crear_usuario(db: Session, user: UserCreate):
 
 # Actualizar usuario
 def actualizar_usuario(db: Session, user_id: int, datos: dict):
+
     usuario = db.query(UserDB).filter(UserDB.id == user_id).first()
 
-    if usuario:
-        for key, value in datos.items():
+    if not usuario:
+        return None
+
+    for key, value in datos.items():
+
+        if key in ALLOWED_FIELDS:
             setattr(usuario, key, value)
 
-        db.commit()
-        db.refresh(usuario)
+    db.commit()
+    db.refresh(usuario)
 
     return usuario
 

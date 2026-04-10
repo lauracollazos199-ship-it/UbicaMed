@@ -95,7 +95,8 @@ def login_google(data: GoogleLoginRequest, db: Session = Depends(get_db)):
             "access_token": token_jwt,
             "token_type": "bearer",
             "nombre": usuario.nombre,
-            "email": usuario.email
+            "email": usuario.email,
+            "user_id": usuario.id 
         }
 
     except Exception as e:
@@ -137,7 +138,8 @@ def login(data: UserLogin, db: Session = Depends(get_db)):
             "access_token": token_jwt,
             "token_type": "bearer",
             "nombre": usuario.nombre,
-            "email": usuario.email
+            "email": usuario.email,
+            "user_id": usuario.id 
         }
 
     except Exception as e:
