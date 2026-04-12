@@ -2,6 +2,7 @@ from datetime import datetime, timedelta
 import os
 import smtplib
 from email.mime.text import MIMEText
+import smtplib
 
 
 from fastapi import APIRouter, HTTPException, Depends
@@ -26,8 +27,10 @@ GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID")
 JWT_SECRET = os.getenv("JWT_SECRET")
 JWT_ALGORITHM = os.getenv("JWT_ALGORITHM")
 
-MAILTRAP_USER = os.getenv("MAILTRAP_USER")
-MAILTRAP_PASS = os.getenv("MAILTRAP_PASS")
+SMTP_SERVER = os.getenv("SMTP_SERVER")
+SMTP_PORT = int(os.getenv("SMTP_PORT"))
+EMAIL = os.getenv("EMAIL")
+PASSWORD = os.getenv("PASSWORD")
 
 
 class GoogleLoginRequest(BaseModel):
@@ -237,9 +240,19 @@ def send_reset_email(email, link):
     """, "html")
 
     msg["Subject"] = "Recuperar contraseña"
-    msg["From"] = "noreply@ubicamed.com"
+    msg["From"] = EMAIL   
     msg["To"] = email
 
-    with smtplib.SMTP("sandbox.smtp.mailtrap.io", 2525) as server:
-        server.login(MAILTRAP_USER, MAILTRAP_PASS)
+    try:
+        server = smtplib.SMTP(SMTP_SERVER, SMTP_PORT)
+        server.starttls()
+        server.login(EMAIL, PASSWORD)
         server.send_message(msg)
+        server.quit()
+        print("Correo enviado correctamente")
+
+    except smtplib.SMTPAuthenticationError:
+        print("Error de autenticación (correo o contraseña incorrecta)")
+    
+    except smtplib.SMTPException as e:
+        print("Error SMTP:", e)
