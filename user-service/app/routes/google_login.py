@@ -2,7 +2,7 @@ from datetime import datetime, timedelta
 import os
 import smtplib
 from email.mime.text import MIMEText
-import smtplib
+
 
 
 from fastapi import APIRouter, HTTPException, Depends
@@ -160,7 +160,10 @@ def forgot_password(data: dict, db: Session = Depends(get_db)):
     usuario = obtener_usuario_por_email(db, email)
 
     if not usuario:
-        raise HTTPException(404, "Usuario no existe")
+        raise HTTPException(
+            status_code=404,
+            detail="No se encontró ninguna cuenta asociada a este correo electrónico."
+        )
 
     # bloquear usuarios Google
     if usuario.password == "GoogleLogin123!":
