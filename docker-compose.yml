@@ -1,0 +1,29 @@
+services:
+
+  geo-service:
+    build: ./geo-service
+    ports:
+      - "8002:8000"
+
+  hospital-service:
+    build: ./hospital-service
+    ports:
+      - "8001:8000"
+
+  user-service:
+    build: ./user-service
+    ports:
+      - "8003:8000"
+
+  api-gateway:
+    build: ./api-gateway
+    ports:
+      - "8000:8000"
+    environment:
+      - HOSPITAL_SERVICE_URL=http://hospital-service:8000
+      - GEO_SERVICE_URL=http://geo-service:8000
+      - USER_SERVICE_URL=http://user-service:8000
+    depends_on:
+      - hospital-service
+      - geo-service
+      - user-service

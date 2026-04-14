@@ -1,5 +1,8 @@
+import os
 from fastapi import APIRouter, HTTPException, Body
 import requests
+
+from dotenv import load_dotenv
 from requests.exceptions import Timeout
 from pydantic import BaseModel, EmailStr
 
@@ -19,10 +22,11 @@ class ResetPasswordRequest(BaseModel):
 
 router = APIRouter()
 
-HOSPITAL_SERVICE = "http://127.0.0.1:8001"
-GEO_SERVICE = "http://127.0.0.1:8002"
-USER_SERVICE = "http://127.0.0.1:8003"
+load_dotenv()
 
+HOSPITAL_SERVICE = os.getenv("HOSPITAL_SERVICE_URL", "http://127.0.0.1:8001")
+GEO_SERVICE = os.getenv("GEO_SERVICE_URL", "http://127.0.0.1:8002")
+USER_SERVICE = os.getenv("USER_SERVICE_URL", "http://127.0.0.1:8003")
 
 # AUTH - GOOGLE
 @router.post("/auth/google")

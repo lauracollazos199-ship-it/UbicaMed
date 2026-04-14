@@ -4,7 +4,7 @@ pydantic
 sqlalchemy
 requests
 python-dotenv
-python-dotenv
+psycopg2-binary
 email-validator
 python-jose
 google-auth
