@@ -10,7 +10,8 @@ from app.services.user_service import (
     actualizar_usuario,
     ListaUsuariosVaciaError,
     UsuarioNoExisteError,
-    UsuarioYaExisteError
+    UsuarioYaExisteError,
+    ValidacionError
 )
 
 from app.models.user import UserCreate, UserUpdate
@@ -24,7 +25,7 @@ router = APIRouter(
 # LISTAR USUARIOS
 # ==============================
 
-@router.get("")
+@router.get("/")
 def listar_usuarios(db: Session = Depends(get_db)):
     try:
         return obtener_usuarios(db)
@@ -48,7 +49,7 @@ def usuario_por_id(user_id: int, db: Session = Depends(get_db)):
 # CREAR USUARIO
 # ==============================
 
-@router.post("")
+@router.post("/")
 def agregar_usuario(user: UserCreate, db: Session = Depends(get_db)):
     try:
         return crear_usuario(db, user)
@@ -56,7 +57,7 @@ def agregar_usuario(user: UserCreate, db: Session = Depends(get_db)):
     except UsuarioYaExisteError as e:
         raise HTTPException(status_code=400, detail=str(e)) from e
 
-    except ValueError as e:   # errores del validator de password
+    except ValidacionError as e:   
         raise HTTPException(status_code=400, detail=str(e)) from e
 
 
@@ -90,5 +91,5 @@ def actualizar(user_id: int, datos: UserUpdate, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail=str(e)) from e
     except UsuarioYaExisteError as e:
         raise HTTPException(status_code=400, detail=str(e)) from e
-    except ValueError as e:  # contraseña incorrecta
+    except ValidacionError as e:  
         raise HTTPException(status_code=400, detail=str(e)) from e

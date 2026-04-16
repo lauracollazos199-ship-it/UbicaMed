@@ -8,10 +8,13 @@ from email.mime.text import MIMEText
 from fastapi import APIRouter, HTTPException, Depends
 from pydantic import BaseModel
 from jose import jwt
+from jose.exceptions import JWTError, ExpiredSignatureError
 from google.oauth2 import id_token
 from google.auth.transport import requests as google_requests
+from google.auth.exceptions import GoogleAuthError
 from sqlalchemy.orm import Session
 from dotenv import load_dotenv
+
 
 
 from app.database.database import get_db
@@ -36,13 +39,15 @@ PASSWORD = os.getenv("PASSWORD")
 class GoogleLoginRequest(BaseModel):
     token: str  
 
+class ForgotPasswordRequest(BaseModel):
+    email: str
+
 
 
 
 @router.post("/google")
 def login_google(data: GoogleLoginRequest, db: Session = Depends(get_db)):
     try:
-        # 1. Verificar token de Google
         idinfo = id_token.verify_oauth2_token(
             data.token, 
             google_requests.Request(), 
@@ -52,24 +57,24 @@ def login_google(data: GoogleLoginRequest, db: Session = Depends(get_db)):
         email = idinfo.get("email")
         name = idinfo.get("name")
 
-        if not name:
-            name = email.split("@")[0].capitalize()
 
         if not email:
             raise HTTPException(
                 status_code=400,
                 detail="No se pudo obtener el email del usuario"
             )
+        
+        if not name:
+            name = email.split("@")[0].capitalize()
 
-        # 2. Buscar usuario en BD
         usuario = obtener_usuario_por_email(db, email)
 
-        # 3. Crear usuario si no existe
+    
         if not usuario:
             user_create = UserCreate(
                 nombre=name,
                 email=email,
-                password="GoogleAuth123!"  # cumple validaciones
+                password="GoogleLogin123!"  
             )
             usuario = crear_usuario(db, user_create)
 
@@ -80,7 +85,6 @@ def login_google(data: GoogleLoginRequest, db: Session = Depends(get_db)):
                 db.refresh(usuario)
 
 
-        # 4. Generar JWT con expiración
         payload = {
             "user_id": usuario.id,
             "email": usuario.email,
@@ -93,7 +97,6 @@ def login_google(data: GoogleLoginRequest, db: Session = Depends(get_db)):
             algorithm=JWT_ALGORITHM
         )
 
-        # 5. Respuesta
         return {
             "access_token": token_jwt,
             "token_type": "bearer",
@@ -102,33 +105,25 @@ def login_google(data: GoogleLoginRequest, db: Session = Depends(get_db)):
             "user_id": usuario.id 
         }
 
+    except GoogleAuthError as e:
+        raise HTTPException(400, detail= "Token de Google inválido")from e
+
     except Exception as e:
-        raise HTTPException(
-            status_code=400,
-            detail=f"Error login con Google: {str(e)}"
-        ) from e
+        print("Error en login con Google:", e)
+        raise HTTPException(500, detail= "Error interno en login con Google") from e
     
     
 @router.post("/login")
 def login(data: UserLogin, db: Session = Depends(get_db)):
     try:
-        # 1. Buscar usuario
         usuario = obtener_usuario_por_email(db, data.email)
 
-        if not usuario:
-            raise HTTPException(
-                status_code=404,
-                detail="El usuario no existe"
-            )
-
-        # 2. Validar contraseña
-        if usuario.password != data.password:
+        if not usuario or usuario.password != data.password:
             raise HTTPException(
                 status_code=401,
                 detail="Credenciales inválidas"
             )
 
-        # 3. Generar JWT
         payload = {
             "user_id": usuario.id,
             "email": usuario.email,
@@ -145,70 +140,87 @@ def login(data: UserLogin, db: Session = Depends(get_db)):
             "user_id": usuario.id 
         }
 
-    except Exception as e:
-        raise HTTPException(
-            status_code=400,
-            detail=str(e)
-        ) from e
+    except HTTPException:
+        raise
     
+    except Exception as e:
+        print("Error en login:", e)
+        raise HTTPException(status_code=500, detail="Error interno en login") from e
 
 @router.post("/forgot-password")
-def forgot_password(data: dict, db: Session = Depends(get_db)):
+def forgot_password(data: ForgotPasswordRequest, db: Session = Depends(get_db)):
+    try:
+        email = data.email
 
-    email = data.get("email")
+        if not email:
+            raise HTTPException(status_code=400, detail="Email requerido")
 
-    usuario = obtener_usuario_por_email(db, email)
+        usuario = obtener_usuario_por_email(db, email)
 
-    if not usuario:
-        raise HTTPException(
-            status_code=404,
-            detail="No se encontró ninguna cuenta asociada a este correo electrónico."
-        )
+        if not usuario:
+            raise HTTPException(
+                status_code=404,
+                detail="No se encontró ninguna cuenta asociada a este correo electrónico."
+            )
 
-    # bloquear usuarios Google
-    if usuario.password == "GoogleLogin123!":
-        raise HTTPException(400, "Este usuario usa Google para iniciar sesión")
+        if usuario.password == "GoogleLogin123!":
+            raise HTTPException(status_code=400, detail="Este usuario usa Google para iniciar sesión")
 
-    token = jwt.encode({
-        "email": email,
-        "exp": datetime.utcnow() + timedelta(minutes=10)
-    }, JWT_SECRET, algorithm="HS256")
+        token = jwt.encode({
+            "email": email,
+            "exp": datetime.utcnow() + timedelta(minutes=10)
+        }, JWT_SECRET, algorithm="HS256")
 
-    link = f"http://127.0.0.1:5500/reset.html?token={token}"
-    
-    # enviar correo
-    send_reset_email(email, link)
+        link = f"https://ubicamed.duckdns.org/reset.html?token={token}"
 
-    return {
-    "message": "Si el correo existe, se enviará un enlace para recuperar la contraseña"
-    }
+        send_reset_email(email, link)
 
+        return {
+            "message": "Si el correo existe, se enviará un enlace para recuperar la contraseña"
+        }
+
+    except HTTPException:
+        raise
+
+    except Exception as e:
+        print("Error en forgot password:", e)
+        raise HTTPException(status_code=500, detail="Error al procesar solicitud")from e
 
 @router.post("/reset-password")
 def reset_password(data: ResetPasswordRequest, db: Session = Depends(get_db)):
-
-    token = data.token
-    new_password = data.password
-
-    if not new_password:
-        raise HTTPException(400, "Debe ingresar una nueva contraseña")
-
     try:
-        payload = jwt.decode(token, JWT_SECRET, algorithms=["HS256"])
-        email = payload["email"]
+        if not data.password:
+            raise HTTPException(status_code=400, detail="Debe ingresar una nueva contraseña")
+
+        try:
+            payload = jwt.decode(data.token, JWT_SECRET, algorithms=["HS256"])
+            email = payload["email"]
+
+        except ExpiredSignatureError as e:
+            raise HTTPException(status_code=400, detail="Token expirado")from e
+
+        except JWTError as e:
+            raise HTTPException(status_code=400, detail="Token inválido") from e
+
+        usuario = obtener_usuario_por_email(db, email)
+
+        if not usuario:
+            raise HTTPException(status_code=404, detail="Usuario no existe")
+
+        usuario.password = data.password
+        db.commit()
+        db.refresh(usuario)
+
+        return {"message": "Contraseña actualizada"}
+
+    except HTTPException:
+        raise
+
+
     except Exception as e:
-        raise HTTPException(400, "Token inválido o expirado") from e
+        print("Error en reset password:", e)
+        raise HTTPException(status_code=500, detail="Error interno") from e
 
-    usuario = obtener_usuario_por_email(db, email)
-
-    if not usuario:
-        raise HTTPException(404, "Usuario no existe")
-
-    usuario.password = new_password
-    db.commit()
-    db.refresh(usuario)
-
-    return {"message": "Contraseña actualizada"}
 
 # Mensaje para recuperar contraseña
 def send_reset_email(email, link):
@@ -254,8 +266,10 @@ def send_reset_email(email, link):
         server.quit()
         print("Correo enviado correctamente")
 
-    except smtplib.SMTPAuthenticationError:
-        print("Error de autenticación (correo o contraseña incorrecta)")
+    except smtplib.SMTPAuthenticationError as e:
+        print("Error de autenticación SMTP", e)
+        raise HTTPException(status_code=500, detail="Error al enviar correo") from e
     
     except smtplib.SMTPException as e:
-        print("Error SMTP:", e)
+        print("Error SMTP", e)
+        raise HTTPException(status_code=500, detail="No se pudo enviar el correo")from e

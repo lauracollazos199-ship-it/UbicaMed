@@ -1,10 +1,11 @@
 import os
-from fastapi import APIRouter, HTTPException, Body
+from fastapi import APIRouter, HTTPException
 import requests
 
 from dotenv import load_dotenv
 from requests.exceptions import Timeout
 from pydantic import BaseModel, EmailStr
+from app.routes.models_user import UserUpdate, UserCreate
 
 class GoogleLoginRequest(BaseModel):
     token: str
@@ -19,6 +20,7 @@ class ForgotPasswordRequest(BaseModel):
 class ResetPasswordRequest(BaseModel):
     token: str
     password: str
+
 
 router = APIRouter()
 
@@ -155,7 +157,7 @@ def reset_password(data: ResetPasswordRequest):
 
 
 @router.post("/users")
-def registrar_usuario(data: dict):
+def registrar_usuario(data: UserCreate):
     try:
         response = requests.post(
             f"{USER_SERVICE}/users",
@@ -184,7 +186,7 @@ def registrar_usuario(data: dict):
         ) from e
 
 @router.put("/users/{user_id}")
-def actualizar_usuario(user_id: int, data: dict = Body(...)):
+def actualizar_usuario(user_id: int, data: UserUpdate):
 
     try:
         response = requests.put(

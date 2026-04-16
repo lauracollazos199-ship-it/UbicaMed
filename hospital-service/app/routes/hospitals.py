@@ -4,6 +4,11 @@ from sqlalchemy.orm import Session
 from app.database.database import get_db
 from app.models.hospital import Hospital, HospitalCrear, EPS
 from app.services import hospital_service
+from app.services.hospital_service import (
+    HospitalNoEncontradoError,
+    EPSNoEncontradaError,
+    HospitalDuplicadoError
+)
 
 router = APIRouter()
 
@@ -21,7 +26,7 @@ def listar_hospitales(
             return hospital_service.obtener_hospitales_por_eps(db, eps)
         return hospital_service.obtener_hospitales(db)
 
-    except ValueError as e:
+    except EPSNoEncontradaError as e:
         raise HTTPException(status_code=404, detail=str(e)) from e
 
 
@@ -31,7 +36,7 @@ def listar_hospitales(
 def hospital_por_id(hospital_id: int, db: Session = Depends(get_db)):
     try:
         return hospital_service.obtener_hospital_por_id(db, hospital_id)
-    except ValueError as e:
+    except HospitalNoEncontradoError as e:
         raise HTTPException(status_code=404, detail=str(e)) from e
 
 
@@ -40,11 +45,7 @@ def hospital_por_id(hospital_id: int, db: Session = Depends(get_db)):
 
 @router.get("/eps", response_model=List[EPS])
 def listar_eps(db: Session = Depends(get_db)):
-    try:
-        return hospital_service.obtener_eps(db)
-    except ValueError as e:
-        raise HTTPException(status_code=404, detail=str(e)) from e
-
+    return hospital_service.obtener_eps(db)
 
 
 # CREAR HOSPITAL
@@ -53,10 +54,12 @@ def listar_eps(db: Session = Depends(get_db)):
 def agregar_hospital(hospital: HospitalCrear, db: Session = Depends(get_db)):
     try:
         return hospital_service.crear_hospital(db, hospital)
-    except ValueError as e:
+
+    except HospitalDuplicadoError as e:
         raise HTTPException(status_code=400, detail=str(e)) from e
 
-
+    except EPSNoEncontradaError as e:
+        raise HTTPException(status_code=400, detail=str(e)) from e
 
 # ELIMINAR HOSPITAL
 
@@ -64,5 +67,6 @@ def agregar_hospital(hospital: HospitalCrear, db: Session = Depends(get_db)):
 def borrar_hospital(hospital_id: int, db: Session = Depends(get_db)):
     try:
         return hospital_service.eliminar_hospital(db, hospital_id)
-    except ValueError as e:
+    
+    except HospitalNoEncontradoError as e:
         raise HTTPException(status_code=404, detail=str(e)) from e

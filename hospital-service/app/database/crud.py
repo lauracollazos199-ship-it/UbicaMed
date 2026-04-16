@@ -84,6 +84,13 @@ def obtener_hospitales_por_eps(db: Session, nombre_eps: str):
         ))
     return hospitales
 
+# Obtener hospitales nombre-direccción
+def obtener_hospital_por_nombre_direccion(db: Session, nombre: str, direccion: str):
+    return db.query(HospitalDB).filter(
+        HospitalDB.nombre == nombre,
+        HospitalDB.direccion == direccion
+    ).first()
+
 # Obtener EPS
 def obtener_eps(db: Session):
     return db.query(EPSDB).order_by(EPSDB.nombre.asc()).all()

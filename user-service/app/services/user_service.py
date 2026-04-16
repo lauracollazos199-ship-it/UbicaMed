@@ -4,9 +4,14 @@ from app.models.user import User
 from app.database.models_db import UserDB
 
 # Excepciones personalizadas
-class UsuarioNoExisteError(Exception): pass
-class UsuarioYaExisteError(Exception): pass
-class ListaUsuariosVaciaError(Exception): pass
+class ValidacionError(Exception):
+    pass
+class UsuarioNoExisteError(Exception):
+    pass
+class UsuarioYaExisteError(Exception): 
+    pass
+class ListaUsuariosVaciaError(Exception):
+    pass
 
 # Listar usuarios
 def obtener_usuarios(db: Session):
@@ -41,7 +46,7 @@ def eliminar_usuario(db: Session, user_id: int):
     crud_eliminar(db, user_id)
     return True
 
-
+# Actualizar usuario
 def actualizar_usuario(db: Session, user_id: int, datos: dict):
     usuario = obtener_usuario_por_id(db, user_id)
     if not usuario:
@@ -51,15 +56,15 @@ def actualizar_usuario(db: Session, user_id: int, datos: dict):
 
     # Bloquear cambio de contraseña para Google
     if es_google and "password" in datos:
-        raise ValueError("Los usuarios de Google no pueden cambiar contraseña")
+        raise ValidacionError("Los usuarios de Google no pueden cambiar contraseña")
 
     # Validar contraseña actual para usuarios normales
     if "password" in datos:
         old_password = datos.get("old_password")
         if not old_password:
-            raise ValueError("Debes ingresar la contraseña actual")
+            raise ValidacionError("Debes ingresar la contraseña actual")
         if usuario.password != old_password:
-            raise ValueError("La contraseña actual no coincide")
+            raise ValidacionError("La contraseña actual no coincide")
 
     # Validar si realmente hay cambios
     cambios = {}
@@ -68,6 +73,6 @@ def actualizar_usuario(db: Session, user_id: int, datos: dict):
             cambios[key] = value
 
     if not cambios:
-        raise ValueError("No hay cambios para actualizar")
+        raise ValidacionError("No hay cambios para actualizar")
 
     return crud_actualizar(db, user_id, cambios)
