@@ -1,11 +1,10 @@
 import os
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Body
 import requests
 
 from dotenv import load_dotenv
 from requests.exceptions import Timeout
 from pydantic import BaseModel, EmailStr
-from app.routes.models_user import UserUpdate, UserCreate
 
 class GoogleLoginRequest(BaseModel):
     token: str
@@ -152,12 +151,12 @@ def reset_password(data: ResetPasswordRequest):
     except Exception as e:
         raise HTTPException(
             status_code=500,
-            detail= "Error interno del servidor"
+            detail= str(e)
         ) from e
 
 
 @router.post("/users")
-def registrar_usuario(data: UserCreate):
+def registrar_usuario(data: dict):
     try:
         response = requests.post(
             f"{USER_SERVICE}/users",
@@ -186,7 +185,7 @@ def registrar_usuario(data: UserCreate):
         ) from e
 
 @router.put("/users/{user_id}")
-def actualizar_usuario(user_id: int, data: UserUpdate):
+def actualizar_usuario(user_id: int, data= Body(...)):
 
     try:
         response = requests.put(
