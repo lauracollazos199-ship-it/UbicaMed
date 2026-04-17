@@ -10,8 +10,7 @@ from app.services.user_service import (
     actualizar_usuario,
     ListaUsuariosVaciaError,
     UsuarioNoExisteError,
-    UsuarioYaExisteError,
-    ValidacionError
+    UsuarioYaExisteError
 )
 
 from app.models.user import UserCreate, UserUpdate
@@ -57,7 +56,7 @@ def agregar_usuario(user: UserCreate, db: Session = Depends(get_db)):
     except UsuarioYaExisteError as e:
         raise HTTPException(status_code=400, detail=str(e)) from e
 
-    except ValidacionError as e:   
+    except ValueError as e:   
         raise HTTPException(status_code=400, detail=str(e)) from e
 
 
@@ -91,5 +90,5 @@ def actualizar(user_id: int, datos: UserUpdate, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail=str(e)) from e
     except UsuarioYaExisteError as e:
         raise HTTPException(status_code=400, detail=str(e)) from e
-    except ValidacionError as e:  
+    except ValueError as e:  
         raise HTTPException(status_code=400, detail=str(e)) from e
