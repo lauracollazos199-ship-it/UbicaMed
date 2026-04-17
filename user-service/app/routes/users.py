@@ -84,7 +84,7 @@ def actualizar(user_id: int, datos: UserUpdate, db: Session = Depends(get_db)):
         return actualizar_usuario(
             db,
             user_id,
-            datos.dict(exclude_unset=True)
+            datos.dict(exclude_unset=True, exclude_none=True)
         )
     except UsuarioNoExisteError as e:
         raise HTTPException(status_code=404, detail=str(e)) from e
