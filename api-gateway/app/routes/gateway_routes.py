@@ -160,7 +160,7 @@ def registrar_usuario(data: dict):
     try:
         response = requests.post(
             f"{USER_SERVICE}/users",
-            json=data.model_dump(),
+            json=data,
             timeout=5
         )
 
@@ -190,7 +190,7 @@ def actualizar_usuario(user_id: int, data= Body(...)):
     try:
         response = requests.put(
             f"{USER_SERVICE}/users/{user_id}",
-            json=data.model_dump(),
+            json=data,
             timeout=5
         )
 
