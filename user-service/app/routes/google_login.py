@@ -109,7 +109,6 @@ def login_google(data: GoogleLoginRequest, db: Session = Depends(get_db)):
         raise HTTPException(400, detail= "Token de Google inválido")from e
 
     except Exception as e:
-        print("Error en login con Google:", e)
         raise HTTPException(500, detail= "Error interno en login con Google") from e
     
     

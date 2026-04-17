@@ -52,7 +52,7 @@ def actualizar_usuario(db: Session, user_id: int, datos: dict):
     if not usuario:
         raise UsuarioNoExisteError(f"El usuario con ID {user_id} no existe")
 
-    es_google = usuario.password == "GoogleAuth123!"
+    es_google = usuario.password == "GoogleLogin123!"
 
     # Bloquear cambio de contraseña para Google
     if es_google and "password" in datos:
