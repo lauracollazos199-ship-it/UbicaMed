@@ -142,11 +142,14 @@ def login(data: UserLogin, db: Session = Depends(get_db)):
             "email": usuario.email,
             "user_id": usuario.id 
         }
+    
+    except Exception:
+        raise
 
     except Exception as e:
         raise HTTPException(
-            status_code=400,
-            detail=str(e)
+            status_code=500,
+            detail="Error interno del servidor"
         ) from e
     
 
@@ -187,18 +190,18 @@ def reset_password(data: ResetPasswordRequest, db: Session = Depends(get_db)):
     new_password = data.password
 
     if not new_password:
-        raise HTTPException(400, "Debe ingresar una nueva contraseña")
+        raise HTTPException(status_code=400, detail="Debe ingresar una nueva contraseña")
 
     try:
         payload = jwt.decode(token, JWT_SECRET, algorithms=["HS256"])
         email = payload["email"]
     except Exception as e:
-        raise HTTPException(400, "Token inválido o expirado") from e
+        raise HTTPException(status_code= 400, detail="Token inválido o expirado") from e
 
     usuario = obtener_usuario_por_email(db, email)
 
     if not usuario:
-        raise HTTPException(404, "Usuario no existe")
+        raise HTTPException(status_code = 404, detail= "Usuario no existe")
 
     usuario.password = new_password
     db.commit()
