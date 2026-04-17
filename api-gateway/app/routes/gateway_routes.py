@@ -152,7 +152,7 @@ def reset_password(data: ResetPasswordRequest):
     except Exception as e:
         raise HTTPException(
             status_code=500,
-            detail=str(e)
+            detail= "Error interno del servidor"
         ) from e
 
 
@@ -161,14 +161,14 @@ def registrar_usuario(data: UserCreate):
     try:
         response = requests.post(
             f"{USER_SERVICE}/users",
-            json=data,
+            json=data.model_dump(),
             timeout=5
         )
 
         if response.status_code != 200:
             raise HTTPException(
                 status_code=response.status_code,
-                detail=response.json().get("detail", "Error en registro")
+                detail=response.json().get("detail", "Error autenticando usuario")
             )
 
         return response.json()
@@ -182,7 +182,7 @@ def registrar_usuario(data: UserCreate):
     except Exception as e:
         raise HTTPException(
             status_code=500,
-            detail=str(e)
+            detail= "Error interno del servidor"
         ) from e
 
 @router.put("/users/{user_id}")
@@ -191,7 +191,7 @@ def actualizar_usuario(user_id: int, data: UserUpdate):
     try:
         response = requests.put(
             f"{USER_SERVICE}/users/{user_id}",
-            json=data,
+            json=data.model_dump(),
             timeout=5
         )
 
@@ -243,7 +243,7 @@ def listar_eps():
     except Exception as e:
         raise HTTPException(
             status_code=500,
-            detail=str(e)
+            detail= "Error interno del servidor"
         ) from e
 
 
@@ -313,7 +313,7 @@ def hospitales_cercanos(eps: str, lat: float, lng: float):
     except Exception as e:
         raise HTTPException(
             status_code=500,
-            detail=str(e)
+            detail= "Error interno del servidor"
         ) from e
 
 
@@ -344,5 +344,5 @@ def hospital_por_id(hospital_id: int):
     except Exception as e:
         raise HTTPException(
             status_code=500,
-            detail=str(e)
+            detail="Error interno del servidor"
         ) from e
