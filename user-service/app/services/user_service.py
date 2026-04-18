@@ -15,7 +15,7 @@ class ListaUsuariosVaciaError(Exception):
 def obtener_usuarios(db: Session):
     usuarios = crud_listar(db)
     if not usuarios:
-        raise ListaUsuariosVaciaError("No existen usuarios registrados")
+        raise ListaUsuariosVaciaError("No existen usuarios registrados.")
     return usuarios
 
 # Obtener usuario por ID
@@ -33,7 +33,7 @@ def obtener_usuario_por_email(db: Session, email: str):
 def crear_usuario(db: Session, user: User):
     existente = db.query(UserDB).filter(UserDB.email == user.email).first()
     if existente:
-        raise UsuarioYaExisteError(f"El usuario con email {user.email} ya existe")
+        raise UsuarioYaExisteError("Este correo se ya encuentra registrado.")
     return crud_crear(db, user)
 
 # Eliminar usuario
@@ -54,7 +54,7 @@ def actualizar_usuario(db: Session, user_id: int, datos: dict):
 
     # Bloquear cambio de contraseña para Google
     if es_google and "password" in datos:
-        raise ValueError("Los usuarios de Google no pueden cambiar contraseña")
+        raise ValueError("Los usuarios de Google no pueden cambiar contraseña.")
 
     # Validar contraseña actual para usuarios normales
     if "password" in datos:
@@ -71,6 +71,6 @@ def actualizar_usuario(db: Session, user_id: int, datos: dict):
             cambios[key] = value
 
     if not cambios:
-        raise ValueError("No hay cambios para actualizar")
+        raise ValueError("No hay cambios para actualizar.")
 
     return crud_actualizar(db, user_id, cambios)

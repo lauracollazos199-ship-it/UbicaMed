@@ -102,10 +102,13 @@ def login_google(data: GoogleLoginRequest, db: Session = Depends(get_db)):
             "user_id": usuario.id 
         }
 
+    except HTTPException:
+        raise
+
     except Exception as e:
         raise HTTPException(
-            status_code=400,
-            detail=f"Error login con Google: {str(e)}"
+            status_code=500,
+            detail="Error en login con Google"
         ) from e
     
     
@@ -143,7 +146,7 @@ def login(data: UserLogin, db: Session = Depends(get_db)):
             "user_id": usuario.id 
         }
     
-    except Exception:
+    except HTTPException:
         raise
 
     except Exception as e:
@@ -155,95 +158,185 @@ def login(data: UserLogin, db: Session = Depends(get_db)):
 
 @router.post("/forgot-password")
 def forgot_password(data: ForgotPasswordRequest, db: Session = Depends(get_db)):
-    email = data.email
+    try:
+        email = data.email
         
-    usuario = obtener_usuario_por_email(db, email)
+        usuario = obtener_usuario_por_email(db, email)
         
-    if not usuario:
-        raise HTTPException(
+        if not usuario:
+            raise HTTPException(
                 status_code=404,
                 detail="No se encontró ninguna cuenta asociada a este correo electrónico."
             )
         
-    if usuario.password == "GoogleLogin123!":
-        raise HTTPException(400, "Este usuario usa Google para iniciar sesión")
+        if usuario.password == "GoogleLogin123!":
+            raise HTTPException(
+                status_code =400, 
+                detail="Este usuario usa Google para iniciar sesión"
+            )
 
         
-    token = jwt.encode({
+        token = jwt.encode({
             "email": email,
             "exp": datetime.utcnow() + timedelta(minutes=10)
         }, JWT_SECRET, algorithm="HS256")
 
-    link = f"https://ubicamed.duckdns.org/reset.html?token={token}"
+        link = f"https://ubicamed.duckdns.org/reset.html?token={token}"
 
-    send_reset_email(email, link)
+        send_reset_email(email, link)
 
-    return {
+        return {
             "message": "Si el correo existe, se enviará un enlace para recuperar la contraseña"
         }
+    except HTTPException:
+        raise
+
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail="Error enviando correo de recuperación"
+        ) from e
 
 
 @router.post("/reset-password")
 def reset_password(data: ResetPasswordRequest, db: Session = Depends(get_db)):
-
-    token = data.token
-    new_password = data.password
-
-    if not new_password:
-        raise HTTPException(status_code=400, detail="Debe ingresar una nueva contraseña")
-
     try:
-        payload = jwt.decode(token, JWT_SECRET, algorithms=["HS256"])
-        email = payload["email"]
+        token = data.token
+        new_password = data.password
+
+        if not new_password:
+            raise HTTPException(
+                status_code=400, 
+                detail="Debe ingresar una nueva contraseña"
+            )
+
+        try:
+            payload = jwt.decode(token, JWT_SECRET, algorithms=["HS256"])
+            email = payload["email"]
+        except Exception as e:
+            raise HTTPException(
+                status_code= 400, 
+                detail="Token inválido o expirado"
+            ) from e
+
+        usuario = obtener_usuario_por_email(db, email)
+
+        if not usuario:
+            raise HTTPException(
+                status_code = 404, 
+                detail= "Usuario no existe"
+            )
+
+        usuario.password = new_password
+        db.commit()
+        db.refresh(usuario)
+
+        return {"message": "Contraseña actualizada"}
+    
+    except HTTPException:
+        raise
+
     except Exception as e:
-        raise HTTPException(status_code= 400, detail="Token inválido o expirado") from e
-
-    usuario = obtener_usuario_por_email(db, email)
-
-    if not usuario:
-        raise HTTPException(status_code = 404, detail= "Usuario no existe")
-
-    usuario.password = new_password
-    db.commit()
-    db.refresh(usuario)
-
-    return {"message": "Contraseña actualizada"}
+        raise HTTPException(
+            status_code=500,
+            detail="Error al resetear contraseña"
+        ) from e
 
 
-# Mensaje para recuperar contraseña
 def send_reset_email(email, link):
 
-    msg = MIMEText(f"""
-    <html>
-      <body style="font-family: Arial; text-align: center;">
-        <h2 style="color:#1E6FB9;">Recuperar contraseña</h2>
-        
-        <p>Hola,</p>
-        
-        <p>Haz clic en el siguiente botón para cambiar tu contraseña:</p>
+    html = f"""
+<html>
+  <body style="margin:0; padding:0; background:#f3f4f6; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif;">
 
-        <a href="{link}" 
-           style="
-             display:inline-block;
-             padding:12px 20px;
-             background:#1E6FB9;
-             color:white;
-             text-decoration:none;
-             border-radius:5px;
-             font-weight:bold;
-           ">
-           Cambiar contraseña
-        </a>
+    <table width="100%" cellpadding="0" cellspacing="0" style="padding:40px 0;">
+      <tr>
+        <td align="center">
 
-        <p style="margin-top:20px; font-size:12px; color:gray;">
-          Este enlace expira en 10 minutos.
-        </p>
-      </body>
-    </html>
-    """, "html")
+          <!-- CARD -->
+          <table width="600" cellpadding="0" cellspacing="0" style="background:#ffffff; border-radius:12px; overflow:hidden; box-shadow:0 4px 20px rgba(0,0,0,0.06);">
 
-    msg["Subject"] = "Recuperar contraseña"
-    msg["From"] = EMAIL   
+            <!-- HEADER -->
+            <tr>
+              <td style="padding:30px 40px 10px 40px; text-align:center;">
+                <div style="font-size:22px; font-weight:700; color:#1E6FB9;">
+                  UbicaMed
+                </div>
+                <div style="font-size:13px; color:#6b7280; margin-top:6px;">
+                  Acceso seguro a hospitales según tu ubicación y EPS
+                </div>
+              </td>
+            </tr>
+
+            <!-- BODY -->
+            <tr>
+              <td style="padding:20px 40px; color:#111827; font-size:14px; line-height:1.6;">
+
+                <p style="margin:0 0 10px;">Hola,</p>
+
+                <p style="margin:0 0 15px;">
+                  Recibimos una solicitud para restablecer la contraseña de tu cuenta.
+                </p>
+
+                <p style="margin:0 0 25px;">
+                  Si fuiste tú, puedes continuar haciendo clic en el botón:
+                </p>
+
+                <!-- BUTTON -->
+                <div style="text-align:center; margin:20px 0 30px;">
+                  <a href="{link}"
+                     style="
+                       background:#1E6FB9;
+                       color:#ffffff;
+                       padding:12px 26px;
+                       text-decoration:none;
+                       border-radius:8px;
+                       font-weight:600;
+                       display:inline-block;
+                       font-size:14px;
+                     ">
+                    Restablecer contraseña
+                  </a>
+                </div>
+
+                <!-- WARNING BOX -->
+                <div style="
+                  background:#f9fafb;
+                  border:1px solid #e5e7eb;
+                  border-left:4px solid #1E6FB9;
+                  padding:12px 14px;
+                  border-radius:8px;
+                  font-size:12px;
+                  color:#4b5563;
+                ">
+                  <strong style="color:#111827;">Seguridad:</strong>
+                  Este enlace expirará en <strong>10 minutos</strong>.  
+                  Si no solicitaste este cambio, puedes ignorar este mensaje.
+                </div>
+
+              </td>
+            </tr>
+
+            <!-- FOOTER -->
+            <tr>
+              <td style="padding:20px 40px; text-align:center; font-size:11px; color:#9ca3af;">
+                UbicaMed · Sistema de acceso seguro
+              </td>
+            </tr>
+
+          </table>
+
+        </td>
+      </tr>
+    </table>
+
+  </body>
+</html>
+"""
+
+    msg = MIMEText(html, "html")
+    msg["Subject"] = "UbicaMed - Recuperación de contraseña"
+    msg["From"] = EMAIL
     msg["To"] = email
 
     try:
@@ -255,7 +348,7 @@ def send_reset_email(email, link):
         print("Correo enviado correctamente")
 
     except smtplib.SMTPAuthenticationError:
-        print("Error de autenticación (correo o contraseña incorrecta)")
-    
+        print("Error de autenticación")
+
     except smtplib.SMTPException as e:
         print("Error SMTP:", e)

@@ -164,25 +164,43 @@ def registrar_usuario(data: dict):
             timeout=5
         )
 
-        if response.status_code != 200:
+        try:
+            response_data = response.json()
+        except ValueError:
+            response_data = {}
+
+
+        if not response.ok:
+            detail = response_data.get("detail", response_data)
+
+            if isinstance(detail, list):
+                detail = " | ".join(
+                    str(e.get("msg", e)) if isinstance(e, dict) else str(e)
+                    for e in detail
+                )
+
             raise HTTPException(
                 status_code=response.status_code,
-                detail=response.json().get("detail", "Error autenticando usuario")
+                detail=detail
             )
 
-        return response.json()
+        return response_data
 
-    except Timeout as e:
+    except HTTPException:
+        raise
+
+    except Timeout:
         raise HTTPException(
             status_code=504,
             detail="user-service no respondió a tiempo"
-        ) from e
+        )
 
     except Exception as e:
         raise HTTPException(
             status_code=500,
-            detail= "Error interno del servidor"
-        ) from e
+            detail=str(e)
+        )
+    
 
 @router.put("/users/{user_id}")
 def actualizar_usuario(user_id: int, data= Body(...)):
