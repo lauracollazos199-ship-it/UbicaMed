@@ -41,7 +41,7 @@ def calcular_distancia(usuario: Location, hospital: HospitalLocation):
 def hospitales_ordenados(usuario: Location, hospitales: list[HospitalLocation]):
     
     if not hospitales:
-            raise HospitalNoEncontradoError("No hay hospitales disponibles")
+        raise HospitalNoEncontradoError("No hay hospitales disponibles")
     
     try:
 

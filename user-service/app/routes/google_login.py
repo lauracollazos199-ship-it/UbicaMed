@@ -108,7 +108,7 @@ def login_google(data: GoogleLoginRequest, db: Session = Depends(get_db)):
     except Exception as e:
         raise HTTPException(
             status_code=500,
-            detail="Error en login con Google"
+            detail="No se pudo iniciar sesión con Google. Intente nuevamente más tarde."
         ) from e
     
     
@@ -126,7 +126,7 @@ def login(data: UserLogin, db: Session = Depends(get_db)):
         if usuario.password != data.password:
             raise HTTPException(
                 status_code=401,
-                detail="Credenciales inválidas"
+                detail="Correo o contraseña incorrectos. Intente nuevamente."
             )
 
 
@@ -152,7 +152,7 @@ def login(data: UserLogin, db: Session = Depends(get_db)):
     except Exception as e:
         raise HTTPException(
             status_code=500,
-            detail="Error interno del servidor"
+            detail="No se pudo iniciar sesión en este momento. Intente nuevamente más tarde."
         ) from e
     
 
@@ -172,7 +172,7 @@ def forgot_password(data: ForgotPasswordRequest, db: Session = Depends(get_db)):
         if usuario.password == "GoogleLogin123!":
             raise HTTPException(
                 status_code =400, 
-                detail="Este usuario usa Google para iniciar sesión"
+                detail="Este usuario está registrado con Google. Inicie sesión usando Google."
             )
 
         
@@ -182,6 +182,7 @@ def forgot_password(data: ForgotPasswordRequest, db: Session = Depends(get_db)):
         }, JWT_SECRET, algorithm="HS256")
 
         link = f"https://ubicamed.duckdns.org/reset.html?token={token}"
+        
 
         send_reset_email(email, link)
 
@@ -194,7 +195,7 @@ def forgot_password(data: ForgotPasswordRequest, db: Session = Depends(get_db)):
     except Exception as e:
         raise HTTPException(
             status_code=500,
-            detail="Error enviando correo de recuperación"
+            detail="No se pudo enviar el correo de recuperación. Intente nuevamente más tarde."
         ) from e
 
 
@@ -216,7 +217,7 @@ def reset_password(data: ResetPasswordRequest, db: Session = Depends(get_db)):
         except Exception as e:
             raise HTTPException(
                 status_code= 400, 
-                detail="Token inválido o expirado"
+                detail="El enlace de recuperación es inválido o ha expirado. Solicite uno nuevo."
             ) from e
 
         usuario = obtener_usuario_por_email(db, email)
@@ -239,7 +240,7 @@ def reset_password(data: ResetPasswordRequest, db: Session = Depends(get_db)):
     except Exception as e:
         raise HTTPException(
             status_code=500,
-            detail="Error al resetear contraseña"
+            detail="No se pudo actualizar la contraseña. Intente nuevamente más tarde."
         ) from e
 
 

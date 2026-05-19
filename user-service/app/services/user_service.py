@@ -54,7 +54,7 @@ def actualizar_usuario(db: Session, user_id: int, datos: dict):
 
     # Bloquear cambio de contraseña para Google
     if es_google and "password" in datos:
-        raise ValueError("Los usuarios de Google no pueden cambiar contraseña.")
+        raise ValueError("Esta cuenta está vinculada a Google y no permite cambiar la contraseña.")
 
     # Validar contraseña actual para usuarios normales
     if "password" in datos:

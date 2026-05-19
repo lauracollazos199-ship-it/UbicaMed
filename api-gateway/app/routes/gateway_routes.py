@@ -43,7 +43,7 @@ def login_google(data: GoogleLoginRequest):
         if response.status_code != 200:
             raise HTTPException(
                 status_code=response.status_code,
-                detail="Error en autenticación con Google"
+                detail="No se pudo iniciar sesión con Google. Intente nuevamente."
             )
 
         return response.json()
@@ -51,14 +51,13 @@ def login_google(data: GoogleLoginRequest):
     except Timeout as e:
         raise HTTPException(
             status_code=504,
-            detail="user-service no respondió a tiempo"
+            detail="El servicio tardó demasiado en responder. Intente nuevamente."
         ) from e
 
     except Exception as e:
         raise HTTPException(
             status_code=500,
-            detail=str(e)
-        ) from e
+            detail="Ocurrió un error inesperado al iniciar sesión con Google. Intente nuevamente más tarde.")from e
 
 
 # LOGIN NORMAL
@@ -75,7 +74,9 @@ def login(data: LoginRequest):
         if response.status_code != 200:
             raise HTTPException(
                 status_code=response.status_code,
-                detail="Error en login"
+                detail=response.json().get(
+                    "detail", 
+                    "No se pudo iniciar sesión. Verifique sus datos.")
             )
 
         return response.json()
@@ -83,13 +84,23 @@ def login(data: LoginRequest):
     except Timeout as e:
         raise HTTPException(
             status_code=504,
-            detail="user-service no respondió a tiempo"
+            detail="El servicio no respondió a tiempo. Intente nuevamente"
         ) from e
+    
+    except ConnectionError as e:
+        raise HTTPException(
+            status_code=503,
+            detail=""
+        )from e
+    
+    except HTTPException:
+        raise
 
     except Exception as e:
+        print("ERROR INTERNO LOGIN:", e)
         raise HTTPException(
             status_code=500,
-            detail=str(e)
+            detail="Ocurrió un error inesperado al iniciar sesión. Intente nuevamente más tarde."
         ) from e
 
 
@@ -106,7 +117,10 @@ def forgot_password(data: ForgotPasswordRequest):
         if response.status_code != 200:
             raise HTTPException(
                 status_code=response.status_code,
-                detail=response.json().get("detail", "Error en recuperación de contraseña")
+                detail=response.json().get(
+                    "detail", 
+                    "No se pudo procesar la solicitud. Intente nuevamente."
+            )
             )
 
         return response.json()
@@ -114,13 +128,13 @@ def forgot_password(data: ForgotPasswordRequest):
     except Timeout as e:
         raise HTTPException(
             status_code=504,
-            detail="user-service no respondió a tiempo"
+            detail="El servicio no respondió a tiempo. Intente nuevamente."
         ) from e
 
     except requests.exceptions.RequestException as e:
         raise HTTPException(
-            status_code=500,
-            detail="Error de conexión con user-service"
+            status_code=503,
+            detail="No fue posible enviar el correo para restablecer la contraseña. Inténtelo nuevamente más tarde."
         ) from e
 
 
@@ -137,7 +151,9 @@ def reset_password(data: ResetPasswordRequest):
         if response.status_code != 200:
             raise HTTPException(
                 status_code=response.status_code,
-                detail=response.json().get("detail", "Error al cambiar contraseña")
+                detail=response.json().get(
+                    "detail", 
+                    "No se pudo actualizar la contraseña.")
             )
 
         return response.json()
@@ -145,13 +161,16 @@ def reset_password(data: ResetPasswordRequest):
     except Timeout as e:
         raise HTTPException(
             status_code=504,
-            detail="user-service no respondió a tiempo"
+            detail="El servicio no respondió a tiempo. Intente nuevamente."
         ) from e
+    
+    except HTTPException:
+        raise
 
     except Exception as e:
         raise HTTPException(
             status_code=500,
-            detail= str(e)
+            detail="Ocurrió un error inesperado al actualizar la contraseña. Intente nuevamente más tarde."
         ) from e
 
 
@@ -168,7 +187,6 @@ def registrar_usuario(data: dict):
             response_data = response.json()
         except ValueError:
             response_data = {}
-
 
         if not response.ok:
             detail = response_data.get("detail", response_data)
@@ -189,17 +207,17 @@ def registrar_usuario(data: dict):
     except HTTPException:
         raise
 
-    except Timeout:
-        raise HTTPException(
+    except Timeout as e:
+        raise HTTPException (
             status_code=504,
-            detail="user-service no respondió a tiempo"
-        )
+            detail="El servicio no respondió a tiempo. Intente nuevamente."
+        )from e
 
     except Exception as e:
         raise HTTPException(
             status_code=500,
-            detail=str(e)
-        )
+            detail="Se produjo un error al procesar el registro. Por favor, inténtelo de nuevo más tarde."
+        ) from e
     
 
 @router.put("/users/{user_id}")
@@ -215,22 +233,28 @@ def actualizar_usuario(user_id: int, data= Body(...)):
         if response.status_code != 200:
             raise HTTPException(
                 status_code=response.status_code,
-                detail=response.json().get("detail", "Error al actualizar usuario")
+                detail=response.json().get(
+                    "detail", 
+                    "No se pudo actualizar la información.")
             )
 
         return response.json()
 
+    except HTTPException:
+        raise
+
     except Timeout as e:
         raise HTTPException(
             status_code=504,
-            detail="user-service no respondió a tiempo"
+            detail="El servicio no respondió a tiempo."
         ) from e
 
     except Exception as e:
         raise HTTPException(
             status_code=500,
-            detail=str(e)
+            detail="Ocurrió un error inesperado al actualizar la información. Intente nuevamente más tarde."
         ) from e
+    
 
 
 # LISTAR EPS
@@ -246,7 +270,7 @@ def listar_eps():
         if response.status_code != 200:
             raise HTTPException(
                 status_code=response.status_code,
-                detail="Error obteniendo EPS"
+                detail="No se pudieron cargar las EPS."
             )
 
         return response.json()
@@ -254,14 +278,14 @@ def listar_eps():
     except Timeout as e:
         raise HTTPException(
             status_code=504,
-            detail="hospital-service no respondió a tiempo"
+            detail="El servicio no respondió a tiempo."
         ) from e
 
     except Exception as e:
         raise HTTPException(
             status_code=500,
-            detail= "Error interno del servidor"
-        ) from e
+            detail="No se pudo cargar la información necesaria para la búsqueda. Inténtelo más tarde."
+        ) from e 
 
 
 # ENDPOINT PRINCIPAL
@@ -269,7 +293,6 @@ def listar_eps():
 def hospitales_cercanos(eps: str, lat: float, lng: float):
 
     try:
-        # Validaciones
         if lat < -90 or lat > 90:
             raise HTTPException(
                 status_code=400,
@@ -282,7 +305,6 @@ def hospitales_cercanos(eps: str, lat: float, lng: float):
                 detail="Longitud inválida"
             )
 
-        # 🔹 1. Obtener hospitales por EPS
         response_hospital = requests.get(
             f"{HOSPITAL_SERVICE}/hospitales?eps={eps}",
             timeout=5
@@ -296,11 +318,9 @@ def hospitales_cercanos(eps: str, lat: float, lng: float):
 
         hospitales = response_hospital.json()
 
-        # Validar lista vacía
         if not hospitales:
             return []
 
-        # 2. Calcular distancias en geo-service
         response_geo = requests.post(
             f"{GEO_SERVICE}/geo/hospitales-cercanos",
             json={
@@ -326,11 +346,20 @@ def hospitales_cercanos(eps: str, lat: float, lng: float):
             status_code=504,
             detail="Un microservicio no respondió a tiempo"
         ) from e
+    
+    except HTTPException:
+        raise
+
+    except requests.exceptions.ConnectionError as e:
+        raise HTTPException(
+            status_code=503,
+            detail="No fue posible conectar con el servicio de geolocalización."
+        ) from e
 
     except Exception as e:
         raise HTTPException(
             status_code=500,
-            detail= "Error interno del servidor"
+            detail="Ocurrió un error inesperado al cargar los hospitales. Intente nuevamente más tarde."
         ) from e
 
 
@@ -355,11 +384,14 @@ def hospital_por_id(hospital_id: int):
     except Timeout as e:
         raise HTTPException(
             status_code=504,
-            detail="hospital-service no respondió a tiempo"
+            detail="Un microservicio no respondió a tiempo"
         ) from e
+    
+    except HTTPException:
+        raise
 
     except Exception as e:
         raise HTTPException(
             status_code=500,
-            detail="Error interno del servidor"
+            detail="Ocurrió un error inesperado al obtener la información del hospital. Intente nuevamente más tarde."
         ) from e
